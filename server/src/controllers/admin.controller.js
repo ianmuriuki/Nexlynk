@@ -1,0 +1,273 @@
+// src/controllers/admin.controller.js
+const { query } = require('../config/db');
+const { safeAdd, emailQueue } = require('../jobs/queue');
+const logger = require('../config/logger');
+const { paginationMeta } = require('../middleware/paginate');
+
+// ── GET /admin/dashboard ──────────────────────────────────
+
+exports.getDashboard = async (req, res, next) => {
+  try {
+    const [
+      totalStudents,
+      totalCompanies,
+      pendingCompanies,
+      totalOpportunities,
+      totalApplications,
+      applicationsByStatus,
+      recentApplications,
+    ] = await Promise.all([
+      query("SELECT COUNT(*) FROM users WHERE role = 'student'"),
+      query("SELECT COUNT(*) FROM company_profiles"),
+      query("SELECT COUNT(*) FROM company_profiles WHERE status = 'pending'"),
+      query("SELECT COUNT(*) FROM opportunities WHERE status = 'published'"),
+      query("SELECT COUNT(*) FROM applications"),
+      query(`
+        SELECT status, COUNT(*) AS count
+        FROM applications
+        GROUP BY status
+      `),
+      query(`
+        SELECT a.id, a.status, a.applied_at,
+               sp.name AS student_name,
+               o.title AS opportunity_title,
+               cp.name AS company_name
+        FROM applications a
+        JOIN student_profiles sp ON sp.id = a.student_id
+        JOIN opportunities o ON o.id = a.opportunity_id
+        JOIN company_profiles cp ON cp.id = o.company_id
+        ORDER BY a.applied_at DESC
+        LIMIT 10
+      `),
+    ]);
+
+    return res.json({
+      data: {
+        counts: {
+          students:          parseInt(totalStudents.rows[0].count, 10),
+          companies:         parseInt(totalCompanies.rows[0].count, 10),
+          pendingCompanies:  parseInt(pendingCompanies.rows[0].count, 10),
+          opportunities:     parseInt(totalOpportunities.rows[0].count, 10),
+          applications:      parseInt(totalApplications.rows[0].count, 10),
+        },
+        applicationsByStatus: applicationsByStatus.rows,
+        recentApplications:   recentApplications.rows,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── GET /admin/companies — list all companies ─────────────
+
+exports.listCompanies = async (req, res, next) => {
+  const { status } = req.query;
+  const { limit, offset, page } = req.pagination;
+
+  try {
+    const conditions = [];
+    const values = [];
+    let idx = 1;
+
+    if (status) {
+      conditions.push(`cp.status = $${idx}`);
+      values.push(status);
+      idx++;
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const countResult = await query(
+      `SELECT COUNT(*) FROM company_profiles cp ${where}`, values
+    );
+    const total = parseInt(countResult.rows[0].count, 10);
+
+    const { rows } = await query(
+      `SELECT cp.*, u.email, u.created_at AS registered_at
+       FROM company_profiles cp
+       JOIN users u ON u.id = cp.id
+       ${where}
+       ORDER BY u.created_at DESC
+       LIMIT $${idx} OFFSET $${idx + 1}`,
+      [...values, limit, offset]
+    );
+
+    return res.json({ data: rows, pagination: paginationMeta(total, { page, limit }) });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── POST /admin/companies/:id/approve ─────────────────────
+
+exports.approveCompany = async (req, res, next) => {
+  const { id } = req.params;
+
+  try {
+    const { rows: before } = await query(
+      'SELECT status FROM company_profiles WHERE id = $1',
+      [id]
+    );
+    if (!before.length) {
+      return res.status(404).json({ error: 'Not Found', message: 'Company not found' });
+    }
+
+    const { rows } = await query(
+      "UPDATE company_profiles SET status = 'approved' WHERE id = $1 RETURNING *",
+      [id]
+    );
+
+    // Get company email for notification
+    const { rows: user } = await query('SELECT email FROM users WHERE id = $1', [id]);
+
+    // Audit log
+    await query(
+      `INSERT INTO events (actor_id, entity_type, entity_id, action, old_value, new_value)
+       VALUES ($1, 'company', $2, 'approved',
+               $3::jsonb, $4::jsonb)`,
+      [
+        req.user.id, id,
+        JSON.stringify({ status: before[0].status }),
+        JSON.stringify({ status: 'approved' }),
+      ]
+    );
+
+    // Queue notification email
+    await safeAdd(emailQueue, 'sendCompanyApprovedEmail', {
+      companyId: id,
+      email: user[0].email,
+      companyName: rows[0].name,
+    });
+
+    logger.info({ event: 'company_approved', adminId: req.user.id, companyId: id });
+
+    return res.json({ message: 'Company approved', data: rows[0] });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── PUT /admin/applications/:id/status ────────────────────
+
+exports.updateApplicationStatus = async (req, res, next) => {
+  const { id } = req.params;
+  const { status, note } = req.body;
+
+  const validStatuses = ['pending', 'under_review', 'shortlisted', 'placed', 'rejected'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      message: `Status must be one of: ${validStatuses.join(', ')}`,
+    });
+  }
+
+  try {
+    const { rows: before } = await query(
+      'SELECT status, student_id, opportunity_id FROM applications WHERE id = $1',
+      [id]
+    );
+    if (!before.length) {
+      return res.status(404).json({ error: 'Not Found', message: 'Application not found' });
+    }
+
+    const { rows } = await query(
+      'UPDATE applications SET status = $1, note = COALESCE($2, note) WHERE id = $3 RETURNING *',
+      [status, note, id]
+    );
+
+    // Audit log
+    await query(
+      `INSERT INTO events (actor_id, entity_type, entity_id, action, old_value, new_value)
+       VALUES ($1, 'application', $2, 'status_changed', $3::jsonb, $4::jsonb)`,
+      [
+        req.user.id, id,
+        JSON.stringify({ status: before[0].status }),
+        JSON.stringify({ status }),
+      ]
+    );
+
+    // Queue status change email to student
+    const { rows: student } = await query(
+      'SELECT u.email, sp.name FROM users u JOIN student_profiles sp ON sp.id = u.id WHERE u.id = $1',
+      [before[0].student_id]
+    );
+    if (student.length) {
+      await safeAdd(emailQueue, 'sendApplicationStatusEmail', {
+        email: student[0].email,
+        studentName: student[0].name,
+        newStatus: status,
+        applicationId: id,
+      });
+    }
+
+    // If placed — create placement record
+    if (status === 'placed') {
+      const { rows: opp } = await query(
+        'SELECT company_id FROM opportunities WHERE id = $1',
+        [before[0].opportunity_id]
+      );
+      if (opp.length) {
+        await query(
+          `INSERT INTO placements (student_id, company_id, opportunity_id)
+           VALUES ($1, $2, $3)
+           ON CONFLICT DO NOTHING`,
+          [before[0].student_id, opp[0].company_id, before[0].opportunity_id]
+        );
+      }
+    }
+
+    logger.info({
+      event: 'application_status_changed',
+      adminId: req.user.id,
+      applicationId: id,
+      from: before[0].status,
+      to: status,
+    });
+
+    return res.json({ data: rows[0] });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ── GET /admin/applications ───────────────────────────────
+
+exports.listApplications = async (req, res, next) => {
+  const { status, company_id } = req.query;
+  const { limit, offset, page } = req.pagination;
+
+  try {
+    const conditions = [];
+    const values = [];
+    let idx = 1;
+
+    if (status) { conditions.push(`a.status = $${idx}`); values.push(status); idx++; }
+    if (company_id) { conditions.push(`o.company_id = $${idx}`); values.push(company_id); idx++; }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const countResult = await query(
+      `SELECT COUNT(*) FROM applications a JOIN opportunities o ON o.id = a.opportunity_id ${where}`,
+      values
+    );
+    const total = parseInt(countResult.rows[0].count, 10);
+
+    const { rows } = await query(
+      `SELECT a.*,
+              sp.name AS student_name, sp.discipline,
+              o.title AS opportunity_title,
+              cp.name AS company_name
+       FROM applications a
+       JOIN student_profiles sp ON sp.id = a.student_id
+       JOIN opportunities o ON o.id = a.opportunity_id
+       JOIN company_profiles cp ON cp.id = o.company_id
+       ${where}
+       ORDER BY a.applied_at DESC
+       LIMIT $${idx} OFFSET $${idx + 1}`,
+      [...values, limit, offset]
+    );
+
+    return res.json({ data: rows, pagination: paginationMeta(total, { page, limit }) });
+  } catch (err) {
+    next(err);
+  }
+};
