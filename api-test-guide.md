@@ -172,7 +172,7 @@ curl -s -X POST http://localhost:5000/api/companies/<company_id>/logo \
 | `422` | Unprocessable — validation failed (check `details` in response) |
 | `500` | Server Error — check server terminal for the stack trace |
 
----
+
 
 ## Test Credentials
 
@@ -182,4 +182,4 @@ curl -s -X POST http://localhost:5000/api/companies/<company_id>/logo \
 | Company | `hr@acme.com` | `Test1234!` |
 | Admin | `admin@platform.dev` | `Admin1234!` |
 
-> If any of these return 401, the user may need to be recreated. Ask the backend team.
+> If any of these return 401, the user may need to be recreated. 
