@@ -1,0 +1,83 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,jsx}'],
+  theme: {
+    extend: {
+      colors: {
+        navy: {
+          DEFAULT: '#0B1D3F',
+          50:  '#EEF2FA',
+          100: '#C9D4EE',
+          200: '#94ABDA',
+          300: '#5E82C5',
+          400: '#2F5AAE',
+          500: '#1A3F8F',
+          600: '#122F72',
+          700: '#0D2258',
+          800: '#0B1D3F',
+          900: '#060E1F',
+        },
+        blue: {
+          DEFAULT: '#1A56DB',
+          50:  '#EFF6FF',
+          100: '#DBEAFE',
+          200: '#BFDBFE',
+          300: '#93C5FD',
+          400: '#60A5FA',
+          500: '#3B82F6',
+          600: '#2563EB',
+          700: '#1A56DB',
+          800: '#1347C8',
+          900: '#0D3A9E',
+        },
+        slate: {
+          50:  '#F8FAFC',
+          100: '#F1F5F9',
+          200: '#E2E8F0',
+          300: '#CBD5E1',
+          400: '#94A3B8',
+          500: '#64748B',
+          600: '#475569',
+          700: '#334155',
+          800: '#1E293B',
+          900: '#0F172A',
+        },
+        success: { DEFAULT: '#10B981', light: '#D1FAE5', dark: '#065F46' },
+        warning: { DEFAULT: '#F59E0B', light: '#FEF3C7', dark: '#92400E' },
+        danger:  { DEFAULT: '#EF4444', light: '#FEE2E2', dark: '#991B1B' },
+        info:    { DEFAULT: '#0EA5E9', light: '#E0F2FE', dark: '#0369A1' },
+      },
+      fontFamily: {
+        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        sans:  ['"DM Sans"', 'system-ui', 'sans-serif'],
+        mono:  ['"JetBrains Mono"', 'monospace'],
+      },
+      fontSize: {
+        '2xs': ['0.65rem', { lineHeight: '1rem' }],
+      },
+      boxShadow: {
+        card:  '0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(11,29,63,.05)',
+        'card-hover': '0 4px 24px rgba(11,29,63,.1)',
+        blue:  '0 4px 20px rgba(26,86,219,.25)',
+        'blue-lg': '0 8px 32px rgba(26,86,219,.35)',
+        nav:   '0 1px 0 #E2E8F0',
+      },
+      borderRadius: {
+        '4xl': '2rem',
+      },
+      animation: {
+        'fade-up':   'fadeUp .6s ease forwards',
+        'fade-in':   'fadeIn .4s ease forwards',
+        'slide-in':  'slideIn .3s ease forwards',
+        'pulse-dot': 'pulseDot 2s ease-in-out infinite',
+      },
+      keyframes: {
+        fadeUp:   { from: { opacity: 0, transform: 'translateY(20px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
+        fadeIn:   { from: { opacity: 0 }, to: { opacity: 1 } },
+        slideIn:  { from: { opacity: 0, transform: 'translateX(-12px)' }, to: { opacity: 1, transform: 'translateX(0)' } },
+        pulseDot: { '0%,100%': { transform: 'scale(1)', opacity: 1 }, '50%': { transform: 'scale(1.4)', opacity: .6 } },
+      },
+    },
+  },
+  plugins: [],
+}

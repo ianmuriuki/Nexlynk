@@ -1,10 +1,37 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nexylink</title>
+
+    <!-- CSP — tightened; api proxy handles actual API origin
+     This is a simple Content Security Policy to enhance security -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src  'self';
+        style-src   'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src    'self' https://fonts.gstatic.com;
+        img-src     'self' data: blob: https://images.unsplash.com;
+        connect-src 'self' http://localhost:5000;
+      "
+    />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options"        content="DENY" />
+    <meta http-equiv="Referrer-Policy"        content="strict-origin-when-cross-origin" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>Nexlynk — Internship Management Platform</title>
+    <meta name="description" content="Nexlynk connects ambitious students with forward-thinking companies. Streamlined internship management — from discovery to placement." />
   </head>
   <body>
     <div id="root"></div>

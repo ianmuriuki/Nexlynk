@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base ─────────────────────────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply font-sans text-slate-900 bg-slate-50;
+    min-height: 100vh;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-slate-300 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-slate-400; }
+
+  /* Remove number input arrows */
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Selection */
+  ::selection { @apply bg-blue-100 text-blue-900; }
+
+  h1, h2, h3 { @apply font-serif; }
+}
+
+/* ─── Components ───────────────────────────────────────── */
+@layer components {
+
+  /* Card */
+  .card {
+    @apply bg-white border border-slate-200 rounded-2xl shadow-md;
+  }
+
+  /* Form inputs */
+  .input {
+    @apply w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl
+           text-sm text-slate-900 font-sans placeholder:text-slate-400
+           outline-none transition-all duration-200
+           focus:border-blue focus:ring-4 focus:ring-blue/20;
+  }
+  .input-error {
+    @apply border-danger focus:border-danger focus:ring-danger/10;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2
+           font-sans font-semibold rounded-xl transition-all duration-200
+           disabled:opacity-50 disabled:cursor-not-allowed select-none;
+  }
+  .btn-primary {
+    @apply btn bg-blue text-white px-5 py-2.5 text-sm
+           hover:bg-blue-800 active:scale-[.98]
+           shadow-lg hover:shadow-xl;
+  }
+  .btn-secondary {
+    @apply btn bg-white text-navy-800 border border-slate-200 px-5 py-2.5 text-sm
+           hover:border-blue hover:text-blue active:scale-[.98];
+  }
+  .btn-ghost {
+    @apply btn text-slate-500 px-4 py-2 text-sm hover:text-navy-800 hover:bg-slate-100;
+  }
+  .btn-danger {
+    @apply btn bg-danger/10 text-danger px-4 py-2 text-sm hover:bg-danger hover:text-white;
+  }
+  .btn-sm   { @apply px-3.5 py-1.5 text-xs rounded-lg; }
+  .btn-lg   { @apply px-7 py-3.5 text-base rounded-xl; }
+  .btn-icon {
+    @apply btn w-9 h-9 p-0 rounded-xl bg-white border border-slate-200
+           text-slate-500 hover:border-blue hover:text-blue;
+  }
+
+  /* Badge */
+  .badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-bold; }
+  .badge-pending     { @apply badge bg-warning-light text-warning-dark; }
+  .badge-shortlisted { @apply badge bg-blue-100 text-blue-700; }
+  .badge-placed      { @apply badge bg-success-light text-success-dark; }
+  .badge-rejected    { @apply badge bg-danger-light text-danger-dark; }
+  .badge-new         { @apply badge bg-success-light text-success-dark; }
+  .badge-draft       { @apply badge bg-slate-100 text-slate-500; }
+  .badge-published   { @apply badge bg-success-light text-success-dark; }
+  .badge-approved    { @apply badge bg-success-light text-success-dark; }
+  .badge-pending-co  { @apply badge bg-warning-light text-warning-dark; }
+
+  /* Sidebar nav item */
+  .nav-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
+           text-white/55 transition-all duration-150 cursor-pointer;
+  }
+  .nav-link:hover   { @apply bg-white/[.07] text-white/90; }
+  .nav-link.active  { @apply bg-blue-700/40 text-white; }
+
+  /* Section heading */
+  .section-eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-bold text-blue
+           uppercase tracking-widest mb-3;
+  }
+  .section-eyebrow::before {
+    content: '';
+    @apply block w-5 h-0.5 bg-blue;
+  }
+}
+
+/* ─── Utilities ─────────────────────────────────────────── */
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  /* Stagger animation helpers */
+  .delay-1 { animation-delay: 100ms; }
+  .delay-2 { animation-delay: 200ms; }
+  .delay-3 { animation-delay: 300ms; }
+  .delay-4 { animation-delay: 400ms; }
+  .delay-5 { animation-delay: 500ms; }
+
+  /* Glass */
+  .glass {
+    @apply bg-white/[.08] backdrop-blur-md border border-white/10;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent;
+  }
+}
