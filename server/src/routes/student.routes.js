@@ -8,11 +8,10 @@ const { paginate } = require('../middleware/paginate');
 const { updateProfileSchema } = require('../schemas/student.schema');
 const { opportunityFilterSchema } = require('../schemas/company.schema');
 
-// Profile CRUD operations
 router.get(
   '/:id/profile',
-  requireAuth, requireOwnership, // means students can only access their own profile, but admins can access any student's profile
-  ctrl.getProfile // ctrl.getProfile is designed to allow students to view their own profile, and admins to view any student's profile.
+  requireAuth, requireOwnership,
+  ctrl.getProfile
 );
 
 router.patch(
@@ -22,7 +21,6 @@ router.patch(
   ctrl.updateProfile
 );
 
-// CV Upload (also serves as a test endpoint for file uploads)
 router.post(
   '/:id/cv',
   requireAuth, requireOwnership,
@@ -30,7 +28,13 @@ router.post(
   ctrl.uploadCV
 );
 
-// Opportunities (public browse — auth optional, but we require it here for apply)
+// ── GET student applications — was missing ────────────────
+router.get(
+  '/:id/applications',
+  requireAuth, requireOwnership,
+  ctrl.getApplications
+);
+
 router.get(
   '/opportunities',
   requireAuth, requireRole('student'),
@@ -39,7 +43,6 @@ router.get(
   ctrl.listOpportunities
 );
 
-// Apply to an opportunity (only students can apply, and they can only apply to published opportunities)
 router.post(
   '/opportunities/:id/apply',
   requireAuth, requireRole('student'),

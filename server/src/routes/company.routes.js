@@ -11,14 +11,21 @@ const {
   createOpportunitySchema,
 } = require('../schemas/company.schema');
 
-// Register company (public) to allow companies to create an account and profile before we have any company admins to create them manually.
+// Register company (public)
 router.post(
   '/',
   validate(registerCompanySchema),
   ctrl.registerCompany
 );
 
-// Update company profile for company admins (and super admins can update any company)
+// Get company profile
+router.get(
+  '/:id',
+  requireAuth,
+  ctrl.getProfile
+);
+
+// Update company profile
 router.patch(
   '/:id',
   requireAuth, requireRole('company', 'admin'), requireOwnership,
@@ -26,7 +33,7 @@ router.patch(
   ctrl.updateCompany
 );
 
-// Upload logo for company admins (and super admins can upload for any company)
+// Upload logo
 router.post(
   '/:id/logo',
   requireAuth, requireRole('company', 'admin'), requireOwnership,
@@ -34,7 +41,7 @@ router.post(
   ctrl.uploadLogo
 );
 
-// Create opportunity by adding to a company profile (only company admins can create opportunities for their own company)
+// Create opportunity
 router.post(
   '/:id/opportunities',
   requireAuth, requireRole('company'), requireOwnership,
@@ -42,12 +49,26 @@ router.post(
   ctrl.createOpportunity
 );
 
-// List applicants who have applied to a company's opportunities (only company admins can view applicants for their own company, but admins can view applicants for any company)
+// Get company opportunities
+router.get(
+  '/:id/opportunities',
+  requireAuth, requireRole('company', 'admin'), requireOwnership,
+  ctrl.getOpportunities
+);
+
+// List applicants
 router.get(
   '/:id/applicants',
   requireAuth, requireRole('company', 'admin'), requireOwnership,
   paginate(),
   ctrl.listApplicants
+);
+
+// Update application status
+router.patch(
+  '/:id/applications/:appId/status',
+  requireAuth, requireRole('company', 'admin'), requireOwnership,
+  ctrl.updateApplicationStatus
 );
 
 module.exports = router;

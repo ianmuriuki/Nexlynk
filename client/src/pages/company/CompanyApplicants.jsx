@@ -48,7 +48,7 @@ export default function CompanyApplicants() {
   // Fetch company opportunities for the filter dropdown
   const { data: oppsData } = useQuery({
     queryKey: ['company-opportunities', user?.id],
-    queryFn:  () => companyAPI.getOpportunities(user.id).then(r => r.data),
+    queryFn:  () => companyAPI.getOpportunities(user.id).then(r => r.data.data ?? r.data),
     enabled:  !!user?.id,
   })
 
@@ -61,13 +61,13 @@ export default function CompanyApplicants() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['company-applicants', user?.id, params],
-    queryFn:  () => companyAPI.getApplicants(user.id, params).then(r => r.data),
+    queryFn:  () => companyAPI.getApplicants(user.id, params).then(r => r.data.data ?? r.data),
     enabled:  !!user?.id,
     keepPreviousData: true,
   })
 
   const statusMutation = useMutation({
-    mutationFn: ({ appId, newStatus }) => companyAPI.updateAppStatus(appId, { status: newStatus }),
+    mutationFn: ({ appId, newStatus }) => companyAPI.updateAppStatus(user.id, appId, { status: newStatus }),
     onSuccess:  () => {
       toast.success('Status updated')
       qc.invalidateQueries(['company-applicants', user?.id])

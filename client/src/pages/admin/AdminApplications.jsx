@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { Search, X, ChevronDown, FileText } from 'lucide-react'
+import { Search, X, FileText } from 'lucide-react'
 import { adminAPI } from '@/api/client'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -14,12 +14,15 @@ const STATUS_CFG = {
 }
 
 const TABS = ['All', 'pending', 'shortlisted', 'placed', 'rejected']
+const COLORS = ['bg-blue-DEFAULT','bg-success','bg-purple-500','bg-info','bg-warning']
 
 function Skeleton() {
   return [...Array(6)].map((_, i) => (
     <tr key={i} className="border-b border-slate-100">
-      {[...Array(6)].map((_, j) => (
-        <td key={j} className="px-5 py-4"><div className="h-4 bg-slate-100 rounded animate-pulse w-3/4" /></td>
+      {[...Array(7)].map((_, j) => (
+        <td key={j} className="px-5 py-4">
+          <div className="h-4 bg-slate-100 rounded animate-pulse w-3/4" />
+        </td>
       ))}
     </tr>
   ))
@@ -39,7 +42,7 @@ export default function AdminApplications() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-applications-full', params],
-    queryFn:  () => adminAPI.applications(params).then(r => r.data),
+    queryFn:  () => adminAPI.applications(params).then(r => r.data.data ?? r.data),
     keepPreviousData: true,
   })
 
@@ -53,16 +56,18 @@ export default function AdminApplications() {
     onError: (e) => toast.error(e?.message || 'Update failed'),
   })
 
-  const allApps    = data?.data ?? data ?? []
+  // data is the array directly after unwrap
+  const allApps    = Array.isArray(data) ? data : (data?.data ?? [])
   const pagination = data?.pagination
 
   const filtered = allApps.filter(a => {
     if (!search.trim()) return true
     const q = search.toLowerCase()
-    const student = (a.student?.name || a.student_name || '').toLowerCase()
-    const opp     = (a.opportunity?.title || a.opportunity_title || '').toLowerCase()
-    const company = (a.opportunity?.company?.name || a.company_name || '').toLowerCase()
-    return student.includes(q) || opp.includes(q) || company.includes(q)
+    // server returns flat fields: student_name, opportunity_title, company_name
+    // also added student_university in the updated controller
+    return (a.student_name      || '').toLowerCase().includes(q) ||
+           (a.opportunity_title || '').toLowerCase().includes(q) ||
+           (a.company_name      || '').toLowerCase().includes(q)
   })
 
   const counts = TABS.slice(1).reduce((acc, s) => {
@@ -70,8 +75,7 @@ export default function AdminApplications() {
     return acc
   }, {})
 
-  // Summary row for "placed" highlight
-  const placedCount = allApps.filter(a => a.status === 'placed').length
+  const placedCount = counts['placed'] ?? 0
 
   return (
     <div className="p-6 lg:p-8 max-w-screen-xl">
@@ -80,14 +84,17 @@ export default function AdminApplications() {
         <h1 className="font-serif text-2xl font-bold text-navy">All Applications</h1>
         <p className="text-slate-500 text-sm mt-1">
           {isLoading ? 'Loading...' : `${pagination?.total ?? allApps.length} total applications`}
-          {placedCount > 0 && <span className="ml-2 text-success font-semibold">· {placedCount} placements confirmed</span>}
+          {placedCount > 0 && (
+            <span className="ml-2 text-success font-semibold">· {placedCount} placements confirmed</span>
+          )}
         </p>
       </motion.div>
 
       {/* Status summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {Object.entries(STATUS_CFG).map(([key, cfg]) => (
-          <button key={key} onClick={() => { setTab(tab === key ? 'All' : key); setPage(1) }}
+          <button key={key}
+            onClick={() => { setTab(tab === key ? 'All' : key); setPage(1) }}
             className={clsx('card p-4 text-left hover:shadow-card-hover transition-all',
               tab === key && 'ring-2 ring-blue-DEFAULT'
             )}>
@@ -113,7 +120,12 @@ export default function AdminApplications() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             className="input pl-10" placeholder="Search student, role, or company..." />
-          {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"><X className="w-4 h-4" /></button>}
+          {search && (
+            <button onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -123,7 +135,7 @@ export default function AdminApplications() {
           <table className="w-full">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
-                {['Student', 'Institution', 'Opportunity', 'Company', 'Applied', 'Status', 'Update'].map(h => (
+                {['Student','Institution','Opportunity','Company','Applied','Status','Update'].map(h => (
                   <th key={h} className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -134,26 +146,33 @@ export default function AdminApplications() {
                   <td colSpan={7} className="px-5 py-16 text-center">
                     <FileText className="w-10 h-10 text-slate-200 mx-auto mb-3" />
                     <p className="text-slate-400 text-sm font-medium">No applications found</p>
-                    {search && <button onClick={() => setSearch('')} className="btn-primary btn-sm mt-3">Clear search</button>}
+                    {search && (
+                      <button onClick={() => setSearch('')} className="btn-primary btn-sm mt-3">
+                        Clear search
+                      </button>
+                    )}
                   </td>
                 </tr>
               ) : filtered.map((a) => {
-                const studentName = a.student?.name || a.student_name || '—'
-                const university  = a.student?.university || a.university || '—'
-                const oppTitle    = a.opportunity?.title  || a.opportunity_title || '—'
-                const coName      = a.opportunity?.company?.name || a.company_name || '—'
-                const cfg         = STATUS_CFG[a.status] || STATUS_CFG.pending
+                // All fields are flat from the server
+                const studentName = a.student_name        || '—'
+                const university  = a.student_university  || '—'
+                const oppTitle    = a.opportunity_title   || '—'
+                const coName      = a.company_name        || '—'
+                const cfg         = STATUS_CFG[a.status]  || STATUS_CFG.pending
                 const date        = a.created_at
-                  ? new Date(a.created_at).toLocaleDateString('en-KE', { day:'numeric', month:'short' }) : '—'
-                const initial     = studentName[0]?.toUpperCase() || '?'
-                const COLORS = ['bg-blue-DEFAULT','bg-success','bg-purple-500','bg-info','bg-warning']
-                const color = COLORS[studentName.charCodeAt(0) % COLORS.length]
+                  ? new Date(a.created_at).toLocaleDateString('en-KE', { day:'numeric', month:'short' })
+                  : '—'
+                const initial = studentName[0]?.toUpperCase() || '?'
+                const color   = COLORS[studentName.charCodeAt(0) % COLORS.length]
 
                 return (
                   <tr key={a.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-8 h-8 rounded-full ${color} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>{initial}</div>
+                        <div className={`w-8 h-8 rounded-full ${color} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                          {initial}
+                        </div>
                         <p className="text-sm font-semibold text-navy">{studentName}</p>
                       </div>
                     </td>
@@ -183,10 +202,10 @@ export default function AdminApplications() {
         </div>
       </div>
 
-      {/* Pagination */}
       {pagination && pagination.total_pages > 1 && (
         <div className="flex items-center justify-center gap-3 mt-6">
-          <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="btn-secondary btn-sm disabled:opacity-40">← Prev</button>
+          <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}
+            className="btn-secondary btn-sm disabled:opacity-40">← Prev</button>
           <div className="flex gap-1">
             {[...Array(Math.min(5, pagination.total_pages))].map((_, i) => {
               const p = i + 1
@@ -199,7 +218,8 @@ export default function AdminApplications() {
             })}
             {pagination.total_pages > 5 && <span className="text-slate-400 self-center px-1">…</span>}
           </div>
-          <button disabled={page >= pagination.total_pages} onClick={() => setPage(p => p + 1)} className="btn-secondary btn-sm disabled:opacity-40">Next →</button>
+          <button disabled={page >= pagination.total_pages} onClick={() => setPage(p => p + 1)}
+            className="btn-secondary btn-sm disabled:opacity-40">Next →</button>
         </div>
       )}
     </div>

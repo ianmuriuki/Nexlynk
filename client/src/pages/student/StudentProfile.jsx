@@ -1,76 +1,115 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { Upload, X, CheckCircle, AlertCircle, Plus } from 'lucide-react'
+import { Upload, X, CheckCircle, Plus } from 'lucide-react'
 import { studentAPI } from '@/api/client'
 import useAuthStore from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
+// Matches backend updateProfileSchema exactly
 const schema = z.object({
-  name:       z.string().min(2, 'Name is required'),
-  university: z.string().optional(),
-  course:     z.string().optional(),
-  year:       z.string().optional(),
-  about:      z.string().max(500).optional(),
-  phone:      z.string().optional(),
-  location:   z.string().optional(),
+  name:                z.string().min(2, 'Name is required').max(100),
+  phone:               z.string().max(20).optional().or(z.literal('')),
+  city:                z.string().max(100).optional().or(z.literal('')),
+  university:          z.string().max(200).optional().or(z.literal('')),
+  course:              z.string().max(200).optional().or(z.literal('')),
+  year_of_study:       z.coerce.number().int().min(1).max(10).optional().or(z.literal('')),
+  expected_graduation: z.string().optional().or(z.literal('')),
+  discipline:          z.string().max(100).optional().or(z.literal('')),
+  availability:        z.string().max(200).optional().or(z.literal('')),
+  about:               z.string().max(2000).optional().or(z.literal('')),
 })
 
+const DISCIPLINES = [
+  'Computer Science', 'Information Technology', 'Software Engineering',
+  'Data Science', 'Electrical Engineering', 'Mechanical Engineering',
+  'Civil Engineering', 'Business Administration', 'Finance & Accounting',
+  'Marketing', 'Human Resources', 'Design & UX', 'Law',
+  'Medicine & Health', 'Agriculture', 'Education', 'Media & Communications', 'Other',
+]
+
+const YEARS = [1, 2, 3, 4, 5, 6]
+
+function Field({ label, error, required, children }) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+        {label}{required && <span className="text-danger ml-0.5">*</span>}
+      </label>
+      {children}
+      {error && <p className="mt-1 text-xs text-danger">{error.message}</p>}
+    </div>
+  )
+}
+
 export default function StudentProfile() {
-  const { user } = useAuthStore()
-  const qc = useQueryClient()
-  const fileRef = useRef()
-  const [skillInput, setSkillInput] = useState('')
-  const [skills, setSkills] = useState([])
+  const { user }  = useAuthStore()
+  const qc        = useQueryClient()
+  const fileRef   = useRef()
+  const [skills,      setSkills]     = useState([])
+  const [skillInput,  setSkillInput] = useState([])
   const [cvUploading, setCvUploading] = useState(false)
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['student-profile', user?.id],
-    queryFn:  () => studentAPI.getProfile(user.id).then(r => r.data),
+    queryFn:  () => studentAPI.getProfile(user.id).then(r => r.data.data ?? r.data),
     enabled:  !!user?.id,
-    onSuccess: (data) => {
-      if (data?.skills?.length) setSkills(data.skills)
-      if (data) reset({
-        name:       data.name       || user?.name || '',
-        university: data.university || '',
-        course:     data.course     || '',
-        year:       data.year       || '',
-        about:      data.about      || '',
-        phone:      data.phone      || '',
-        location:   data.location   || '',
-      })
-    }
   })
 
-  const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
-      name:       user?.name || '',
-      university: '',
-      course:     '',
-      year:       '',
-      about:      '',
-      phone:      '',
-      location:   '',
-    }
+      name: user?.name || '', phone: '', city: '',
+      university: '', course: '', year_of_study: '',
+      expected_graduation: '', discipline: '', availability: '', about: '',
+    },
   })
+
+  // Populate form and skills once profile loads
+  useEffect(() => {
+    if (!profile) return
+    reset({
+      name:                profile.name                || user?.name || '',
+      phone:               profile.phone               || '',
+      city:                profile.city                || '',
+      university:          profile.university          || '',
+      course:              profile.course              || '',
+      year_of_study:       profile.year_of_study       || '',
+      expected_graduation: profile.expected_graduation
+        ? profile.expected_graduation.split('T')[0]   // format for date input
+        : '',
+      discipline:          profile.discipline          || '',
+      availability:        profile.availability        || '',
+      about:               profile.about               || '',
+    })
+    if (profile.skills?.length) setSkills(profile.skills)
+  }, [profile, reset, user?.name])
 
   const updateMutation = useMutation({
     mutationFn: (body) => studentAPI.updateProfile(user.id, body),
-    onSuccess:  () => { toast.success('Profile updated!'); qc.invalidateQueries(['student-profile', user?.id]) },
-    onError:    (e) => toast.error(e?.message || 'Update failed'),
+    onSuccess:  () => {
+      toast.success('Profile updated!')
+      qc.invalidateQueries(['student-profile', user?.id])
+    },
+    onError: (e) => toast.error(e?.message || 'Update failed'),
   })
 
-  const onSubmit = (values) => updateMutation.mutate({ ...values, skills })
+  const onSubmit = (values) => {
+    // Strip empty strings so server doesn't reject optional fields
+    const clean = Object.fromEntries(
+      Object.entries(values).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+    )
+    updateMutation.mutate({ ...clean, skills })
+  }
 
   const addSkill = () => {
     const s = skillInput.trim()
-    if (s && !skills.includes(s) && skills.length < 15) {
-      setSkills([...skills, s])
+    if (s && !skills.includes(s) && skills.length < 30) {
+      setSkills(prev => [...prev, s])
       setSkillInput('')
     }
   }
@@ -80,19 +119,25 @@ export default function StudentProfile() {
   const handleCVUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { toast.error('File must be under 5MB'); return }
-    if (!['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type)) {
-      toast.error('Only PDF or Word files allowed'); return
+    // Server only accepts PDF
+    if (file.type !== 'application/pdf') {
+      toast.error('Only PDF files are accepted')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File must be under 5MB')
+      return
     }
     setCvUploading(true)
     try {
       await studentAPI.uploadCV(user.id, file)
-      toast.success('CV uploaded successfully!')
+      toast.success('CV uploaded!')
       qc.invalidateQueries(['student-profile', user?.id])
     } catch (e) {
       toast.error(e?.message || 'Upload failed')
     } finally {
       setCvUploading(false)
+      e.target.value = ''
     }
   }
 
@@ -100,7 +145,9 @@ export default function StudentProfile() {
 
   if (isLoading) return (
     <div className="p-8 max-w-3xl space-y-4">
-      {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse" />)}
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+      ))}
     </div>
   )
 
@@ -111,78 +158,108 @@ export default function StudentProfile() {
         <p className="text-slate-500 text-sm mt-1">Keep your profile up to date to match more opportunities.</p>
       </motion.div>
 
-      {/* Completion bar */}
+      {/* Profile completion */}
       <div className="card p-5 mb-6">
         <div className="flex items-center justify-between mb-2">
           <p className="text-sm font-semibold text-navy">Profile strength</p>
           <span className="text-sm font-bold text-blue-DEFAULT">{completion}%</span>
         </div>
         <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-blue-400 to-blue-DEFAULT rounded-full transition-all duration-700" style={{ width: `${completion}%` }} />
+          <div
+            className="h-full bg-gradient-to-r from-blue-400 to-blue-DEFAULT rounded-full transition-all duration-700"
+            style={{ width: `${completion}%` }}
+          />
         </div>
-        {completion < 100 && <p className="text-xs text-slate-400 mt-2">Add more details to strengthen your profile and appear in more searches.</p>}
+        {completion < 100 && (
+          <p className="text-xs text-slate-400 mt-2">
+            Add more details to strengthen your profile.
+          </p>
+        )}
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
 
-        {/* Basic info */}
+        {/* Personal */}
         <div className="card p-6 space-y-4">
-          <h2 className="font-semibold text-navy text-base border-b border-slate-100 pb-3">Personal information</h2>
+          <h2 className="font-semibold text-navy border-b border-slate-100 pb-3">Personal information</h2>
 
           <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Full name *</label>
+            <Field label="Full name" required error={errors.name}>
               <input {...register('name')} className={clsx('input', errors.name && 'input-error')} placeholder="Jane Muthoni" />
-              {errors.name && <p className="mt-1 text-xs text-danger">{errors.name.message}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Phone number</label>
+            </Field>
+            <Field label="Phone number" error={errors.phone}>
               <input {...register('phone')} className="input" placeholder="+254 7XX XXX XXX" />
-            </div>
+            </Field>
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Location</label>
-            <input {...register('location')} className="input" placeholder="Nairobi, Kenya" />
-          </div>
+          <Field label="City" error={errors.city}>
+            <input {...register('city')} className="input" placeholder="Nairobi" />
+          </Field>
+
+          <Field label="Availability" error={errors.availability}>
+            <input
+              {...register('availability')}
+              className="input"
+              placeholder="e.g. Available from June 2025, full-time"
+            />
+          </Field>
         </div>
 
         {/* Academic */}
         <div className="card p-6 space-y-4">
-          <h2 className="font-semibold text-navy text-base border-b border-slate-100 pb-3">Academic details</h2>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">University / Institution</label>
-            <input {...register('university')} className="input" placeholder="University of Nairobi" />
-          </div>
+          <h2 className="font-semibold text-navy border-b border-slate-100 pb-3">Academic details</h2>
+
+          <Field label="University / Institution" error={errors.university}>
+            <input {...register('university')} className="input" placeholder="Technical University of Mombasa" />
+          </Field>
+
           <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Course / Programme</label>
-              <input {...register('course')} className="input" placeholder="Computer Science" />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Year of study</label>
-              <select {...register('year')} className="input">
+            <Field label="Course / Programme" error={errors.course}>
+              <input {...register('course')} className="input" placeholder="Bachelor of Information Technology" />
+            </Field>
+            <Field label="Year of study" error={errors.year_of_study}>
+              <select {...register('year_of_study')} className="input">
                 <option value="">Select year</option>
-                {['Year 1','Year 2','Year 3','Year 4','Postgraduate','Recent Graduate'].map(y => <option key={y} value={y}>{y}</option>)}
+                {YEARS.map(y => <option key={y} value={y}>Year {y}</option>)}
+                <option value="7">Postgraduate</option>
+                <option value="8">Recent Graduate</option>
               </select>
-            </div>
+            </Field>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Discipline / Field" error={errors.discipline}>
+              <select {...register('discipline')} className="input">
+                <option value="">Select discipline</option>
+                {DISCIPLINES.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </Field>
+            <Field label="Expected graduation" error={errors.expected_graduation}>
+              <input
+                {...register('expected_graduation')}
+                type="date"
+                className="input"
+              />
+            </Field>
           </div>
         </div>
 
         {/* About */}
         <div className="card p-6">
-          <h2 className="font-semibold text-navy text-base border-b border-slate-100 pb-3 mb-4">About me</h2>
-          <textarea
-            {...register('about')}
-            rows={4}
-            className="input resize-none"
-            placeholder="Write a short bio about yourself, your interests, and career goals..."
-          />
+          <h2 className="font-semibold text-navy border-b border-slate-100 pb-3 mb-4">About me</h2>
+          <Field label="Bio" error={errors.about}>
+            <textarea
+              {...register('about')}
+              rows={4}
+              className="input resize-none"
+              placeholder="Write a short bio about yourself, your interests, and career goals..."
+            />
+          </Field>
         </div>
 
         {/* Skills */}
         <div className="card p-6">
-          <h2 className="font-semibold text-navy text-base border-b border-slate-100 pb-3 mb-4">Skills</h2>
+          <h2 className="font-semibold text-navy border-b border-slate-100 pb-3 mb-4">Skills</h2>
           <div className="flex flex-wrap gap-2 mb-4">
             {skills.map((s) => (
               <span key={s} className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
@@ -199,16 +276,15 @@ export default function StudentProfile() {
               onChange={e => setSkillInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSkill() } }}
               className="input flex-1"
-              placeholder="Type a skill and press Enter (e.g. Python, React, Excel)"
+              placeholder="Type a skill and press Enter (e.g. Python, React)"
             />
             <button type="button" onClick={addSkill} className="btn-secondary px-4">
               <Plus className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-xs text-slate-400 mt-2">{skills.length}/15 skills added</p>
+          <p className="text-xs text-slate-400 mt-2">{skills.length}/30 skills</p>
         </div>
 
-        {/* Save */}
         <button
           type="submit"
           disabled={updateMutation.isPending}
@@ -221,31 +297,44 @@ export default function StudentProfile() {
         </button>
       </form>
 
-      {/* CV Upload */}
-      <div className="card p-6 mt-6">
-        <h2 className="font-semibold text-navy text-base border-b border-slate-100 pb-3 mb-4">Curriculum Vitae (CV)</h2>
-        {profile?.cv_path
-          ? (
-            <div className="flex items-center gap-3 bg-success-light border border-success/20 rounded-xl px-4 py-3.5">
-              <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-success-dark">CV uploaded successfully</p>
-                <p className="text-xs text-success-dark/70 mt-0.5">Your CV is attached to all applications automatically.</p>
-              </div>
-              <button onClick={() => fileRef.current?.click()} className="btn-secondary btn-sm text-xs">Replace</button>
+      {/* CV Upload — separate from the form, PDF only */}
+      <div className="card p-6 mt-5">
+        <h2 className="font-semibold text-navy border-b border-slate-100 pb-3 mb-4">
+          Curriculum Vitae (CV)
+        </h2>
+        {profile?.cv_path ? (
+          <div className="flex items-center gap-3 bg-success-light border border-success/20 rounded-xl px-4 py-3.5">
+            <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-success-dark">CV uploaded ✓</p>
+              <p className="text-xs text-success-dark/70 mt-0.5">
+                Automatically attached to all your applications.
+              </p>
             </div>
-          ) : (
-            <div
+            <button
               onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center cursor-pointer hover:border-blue-DEFAULT hover:bg-blue-50/30 transition-all group"
-            >
-              <Upload className="w-8 h-8 text-slate-300 group-hover:text-blue-DEFAULT mx-auto mb-3 transition-colors" />
-              <p className="text-sm font-semibold text-slate-600 group-hover:text-blue-DEFAULT">Click to upload your CV</p>
-              <p className="text-xs text-slate-400 mt-1">PDF or Word · Max 5MB</p>
-            </div>
-          )
-        }
-        <input ref={fileRef} type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleCVUpload} />
+              className="btn-secondary btn-sm text-xs"
+            >Replace</button>
+          </div>
+        ) : (
+          <div
+            onClick={() => fileRef.current?.click()}
+            className="border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center cursor-pointer hover:border-blue-DEFAULT hover:bg-blue-50/30 transition-all group"
+          >
+            <Upload className="w-8 h-8 text-slate-300 group-hover:text-blue-DEFAULT mx-auto mb-3 transition-colors" />
+            <p className="text-sm font-semibold text-slate-600 group-hover:text-blue-DEFAULT">
+              Click to upload your CV
+            </p>
+            <p className="text-xs text-slate-400 mt-1">PDF only · Max 5MB</p>
+          </div>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          className="hidden"
+          accept=".pdf"
+          onChange={handleCVUpload}
+        />
         {cvUploading && (
           <div className="flex items-center gap-2 mt-3 text-sm text-blue-DEFAULT">
             <span className="w-4 h-4 border-2 border-blue-DEFAULT/30 border-t-blue-DEFAULT rounded-full animate-spin" />

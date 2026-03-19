@@ -15,7 +15,6 @@ const schema = z.object({
   password: z.string().min(1, 'Password is required'),
 })
 
-// Admin tab only appears when URL has ?admin=1 — hidden from regular users
 const getTabs = (showAdmin) =>
   showAdmin ? ['Student', 'Company', 'Admin'] : ['Student', 'Company']
 
@@ -30,11 +29,9 @@ export default function LoginPage() {
   const location  = useLocation()
   const { login } = useAuthStore()
 
-  // Check for secret admin flag in URL: /login?admin=1
   const params    = new URLSearchParams(location.search)
   const showAdmin = params.get('admin') === '1'
-
-  const tabs = getTabs(showAdmin)
+  const tabs      = getTabs(showAdmin)
 
   const [activeTab, setActiveTab] = useState(showAdmin ? 'Admin' : 'Student')
   const [loading,   setLoading]   = useState(false)
@@ -51,24 +48,14 @@ export default function LoginPage() {
     try {
       const { user } = await login(email, password)
 
-      // Validate the tab matches the actual role from the token
-      const expectedRole = activeTab.toLowerCase()
-      if (user.role !== expectedRole) {
-        setApiError(
-          `This account is registered as a ${user.role}, not a ${expectedRole}. ` +
-          `Please select the correct tab.`
-        )
-        setLoading(false)
-        return
-      }
-
-      toast.success(`Welcome back!`)
+      toast.success('Welcome back!')
 
       const from = location.state?.from?.pathname
       if (from && isSafeRedirect(from)) {
         navigate(from, { replace: true })
         return
       }
+      // Always redirect by actual role from token — tab selection is just a visual hint
       const dest = user.role === 'admin' ? '/admin' : user.role === 'company' ? '/company' : '/student'
       navigate(dest, { replace: true })
     } catch (err) {
@@ -102,12 +89,11 @@ export default function LoginPage() {
           <p className="text-white/55 text-base leading-relaxed mb-10 max-w-xs">
             Join thousands of students and hundreds of companies building Kenya's workforce of tomorrow.
           </p>
-
           <div className="space-y-3">
             {[
-              { icon: '🎓', bold: '2,400+ students placed',       sub: 'Across 12+ industries' },
-              { icon: '🏢', bold: '340+ verified companies',      sub: 'From startups to enterprises' },
-              { icon: '⚡', bold: 'Average 8 days to placement',  sub: 'Fastest in the market' },
+              { icon: '🎓', bold: '2,400+ students placed',      sub: 'Across 12+ industries' },
+              { icon: '🏢', bold: '340+ verified companies',     sub: 'From startups to enterprises' },
+              { icon: '⚡', bold: 'Average 8 days to placement', sub: 'Fastest in the market' },
             ].map((s) => (
               <div key={s.bold} className="glass rounded-xl px-4 py-3.5 flex items-center gap-3.5">
                 <div className="w-9 h-9 bg-blue-700/40 rounded-lg flex items-center justify-center text-lg flex-shrink-0">{s.icon}</div>
@@ -119,7 +105,6 @@ export default function LoginPage() {
             ))}
           </div>
         </div>
-
         <p className="text-xs text-white/25 relative z-10">© 2026 Nexlynk Engineers Limited</p>
       </div>
 
@@ -131,9 +116,10 @@ export default function LoginPage() {
           transition={{ duration: .5 }}
           className="w-full max-w-[420px]"
         >
-          {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 bg-navy rounded-xl flex items-center justify-center"><Zap className="w-4 h-4 text-white" /></div>
+            <div className="w-8 h-8 bg-navy rounded-xl flex items-center justify-center">
+              <Zap className="w-4 h-4 text-white" />
+            </div>
             <span className="font-serif font-bold text-navy">Nexlynk</span>
           </div>
 
@@ -143,7 +129,7 @@ export default function LoginPage() {
             <Link to="/register" className="text-blue-DEFAULT font-semibold hover:underline">Sign up free →</Link>
           </p>
 
-          {/* Role tabs */}
+          {/* Role tabs — visual hint only, no validation against token role */}
           <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 mb-2">
             {tabs.map((tab) => (
               <button
@@ -160,10 +146,8 @@ export default function LoginPage() {
             ))}
           </div>
 
-          {/* Tab hint */}
           <p className="text-xs text-slate-400 mb-6 px-1">{TAB_HINTS[activeTab]}</p>
 
-          {/* Error */}
           {apiError && (
             <div className="flex items-start gap-2.5 bg-danger-light border border-danger/20 rounded-xl px-4 py-3 mb-5 text-sm text-danger-dark">
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -187,7 +171,9 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-sm font-semibold text-slate-700">Password</label>
-                <Link to="/forgot-password" className="text-xs text-blue-DEFAULT font-medium hover:underline">Forgot password?</Link>
+                <Link to="/forgot-password" className="text-xs text-blue-DEFAULT font-medium hover:underline">
+                  Forgot password?
+                </Link>
               </div>
               <div className="relative">
                 <input

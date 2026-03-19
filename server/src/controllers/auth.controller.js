@@ -9,14 +9,15 @@ const logger = require('../config/logger');
 
 // ── helpers ──────────────────────────────────────────────
 
-function issueTokens(userId) {
+// role is now included in the token so the frontend can read it on refresh
+function issueTokens(userId, role) {
   const accessToken = jwt.sign(
-    { sub: userId },
+    { sub: userId, role },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
   );
   const refreshToken = jwt.sign(
-    { sub: userId, jti: uuidv4() },
+    { sub: userId, role, jti: uuidv4() },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
   );
@@ -38,7 +39,6 @@ exports.signup = async (req, res, next) => {
   const { role, email, password, name } = req.body;
 
   try {
-    // Check for existing user
     const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length) {
       return res.status(409).json({ error: 'Conflict', message: 'Email already registered' });
@@ -47,29 +47,20 @@ exports.signup = async (req, res, next) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const userId = uuidv4();
 
-    // Create user row
     await query(
       'INSERT INTO users (id, role, email, password_hash) VALUES ($1, $2, $3, $4)',
       [userId, role, email, passwordHash]
     );
 
-    // Create profile row
     if (role === 'student') {
-      await query(
-        'INSERT INTO student_profiles (id, name) VALUES ($1, $2)',
-        [userId, name]
-      );
+      await query('INSERT INTO student_profiles (id, name) VALUES ($1, $2)', [userId, name]);
     } else if (role === 'company') {
-      await query(
-        'INSERT INTO company_profiles (id, name) VALUES ($1, $2)',
-        [userId, name]
-      );
+      await query('INSERT INTO company_profiles (id, name) VALUES ($1, $2)', [userId, name]);
     }
 
-    // Queue verification email
     await safeAdd(emailQueue, 'sendVerificationEmail', { userId, email, name });
 
-    const { accessToken, refreshToken } = issueTokens(userId);
+    const { accessToken, refreshToken } = issueTokens(userId, role);
     await storeRefreshToken(userId, refreshToken);
 
     logger.info({ event: 'user_signup', userId, role, email });
@@ -106,10 +97,9 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ error: 'Unauthorized', message: 'Invalid credentials' });
     }
 
-    // Update last login
     await query('UPDATE users SET last_login_at = NOW() WHERE id = $1', [user.id]);
 
-    const { accessToken, refreshToken } = issueTokens(user.id);
+    const { accessToken, refreshToken } = issueTokens(user.id, user.role);
     await storeRefreshToken(user.id, refreshToken);
 
     logger.info({ event: 'user_login', userId: user.id });
@@ -127,7 +117,9 @@ exports.login = async (req, res, next) => {
 // ── POST /auth/refresh ────────────────────────────────────
 
 exports.refresh = async (req, res, next) => {
-  const { refreshToken } = req.body;
+  // Support both body and cookie delivery of refresh token
+  const refreshToken = req.body?.refreshToken || req.cookies?.refreshToken;
+
   if (!refreshToken) {
     return res.status(400).json({ error: 'Bad Request', message: 'refreshToken required' });
   }
@@ -135,7 +127,7 @@ exports.refresh = async (req, res, next) => {
   try {
     const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
     const { rows } = await query(
-      'SELECT id, user_id FROM refresh_tokens WHERE token = $1 AND revoked = FALSE AND expires_at > NOW()',
+      'SELECT id FROM refresh_tokens WHERE token = $1 AND revoked = FALSE AND expires_at > NOW()',
       [refreshToken]
     );
 
@@ -143,9 +135,19 @@ exports.refresh = async (req, res, next) => {
       return res.status(401).json({ error: 'Unauthorized', message: 'Invalid or expired refresh token' });
     }
 
-    // Rotate: revoke old, issue new
+    // Get the user role to include in the new token
+    const { rows: userRows } = await query(
+      'SELECT role FROM users WHERE id = $1',
+      [decoded.sub]
+    );
+
+    if (!userRows.length) {
+      return res.status(401).json({ error: 'Unauthorized', message: 'User not found' });
+    }
+
     await query('UPDATE refresh_tokens SET revoked = TRUE WHERE token = $1', [refreshToken]);
-    const { accessToken, refreshToken: newRefresh } = issueTokens(decoded.sub);
+
+    const { accessToken, refreshToken: newRefresh } = issueTokens(decoded.sub, userRows[0].role);
     await storeRefreshToken(decoded.sub, newRefresh);
 
     return res.json({ accessToken, refreshToken: newRefresh });
@@ -160,7 +162,7 @@ exports.refresh = async (req, res, next) => {
 // ── POST /auth/logout ─────────────────────────────────────
 
 exports.logout = async (req, res, next) => {
-  const { refreshToken } = req.body;
+  const refreshToken = req.body?.refreshToken || req.cookies?.refreshToken;
   try {
     if (refreshToken) {
       await query('UPDATE refresh_tokens SET revoked = TRUE WHERE token = $1', [refreshToken]);
@@ -175,12 +177,10 @@ exports.logout = async (req, res, next) => {
 
 exports.forgotPassword = async (req, res, next) => {
   const { email } = req.body;
-
   try {
     const { rows } = await query('SELECT id, email FROM users WHERE email = $1', [email]);
-    // Always return 200 to prevent email enumeration
     if (rows.length) {
-      await safeAdd(emailQueue,'sendPasswordResetEmail', { userId: rows[0].id, email });
+      await safeAdd(emailQueue, 'sendPasswordResetEmail', { userId: rows[0].id, email });
     }
     return res.json({ message: 'If that email exists, a reset link has been sent.' });
   } catch (err) {

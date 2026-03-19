@@ -16,11 +16,9 @@ exports.getProfile = async (req, res, next) => {
        WHERE sp.id = $1`,
       [req.params.id]
     );
-
     if (!rows.length) {
       return res.status(404).json({ error: 'Not Found', message: 'Student profile not found' });
     }
-
     return res.json({ data: rows[0] });
   } catch (err) {
     next(err);
@@ -43,7 +41,6 @@ exports.updateProfile = async (req, res, next) => {
   }
 
   try {
-    // Build SET clause dynamically
     const setClause = updates.map((k, i) => `${k} = $${i + 2}`).join(', ');
     const values = [req.params.id, ...updates.map(k => {
       const v = fields[k];
@@ -59,7 +56,6 @@ exports.updateProfile = async (req, res, next) => {
       return res.status(404).json({ error: 'Not Found', message: 'Student not found' });
     }
 
-    // Recalculate profile completion
     const profile = rows[0];
     const completionFields = [
       'name', 'phone', 'city', 'university', 'course',
@@ -110,6 +106,35 @@ exports.uploadCV = async (req, res, next) => {
   }
 };
 
+// ── GET /students/:id/applications ───────────────────────
+
+exports.getApplications = async (req, res, next) => {
+  try {
+    const { rows } = await query(
+      `SELECT
+         a.*,
+         json_build_object(
+           'id',           o.id,
+           'title',        o.title,
+           'type',         o.type,
+           'location',     o.location,
+           'stipend',      o.stipend,
+           'application_deadline', o.application_deadline,
+           'company_name', cp.name
+         ) AS opportunity
+       FROM applications a
+       JOIN opportunities o      ON o.id  = a.opportunity_id
+       JOIN company_profiles cp  ON cp.id = o.company_id
+       WHERE a.student_id = $1
+       ORDER BY a.created_at DESC`,
+      [req.params.id]
+    );
+    return res.json({ data: rows });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ── GET /opportunities ────────────────────────────────────
 
 exports.listOpportunities = async (req, res, next) => {
@@ -122,7 +147,7 @@ exports.listOpportunities = async (req, res, next) => {
     let idx = 1;
 
     if (discipline) {
-      conditions.push(`o.disciplines @> $${idx}::jsonb`); // Assuming disciplines is stored as JSONB array
+      conditions.push(`o.disciplines @> $${idx}::jsonb`);
       values.push(JSON.stringify([discipline]));
       idx++;
     }
@@ -176,7 +201,6 @@ exports.applyToOpportunity = async (req, res, next) => {
   const opportunityId = req.params.id;
 
   try {
-    // Verify opportunity exists and is published
     const { rows: opp } = await query(
       "SELECT id FROM opportunities WHERE id = $1 AND status = 'published'",
       [opportunityId]
@@ -185,7 +209,6 @@ exports.applyToOpportunity = async (req, res, next) => {
       return res.status(404).json({ error: 'Not Found', message: 'Opportunity not found or closed' });
     }
 
-    // Check for duplicate (idempotent)
     const { rows: existing } = await query(
       'SELECT id FROM applications WHERE opportunity_id = $1 AND student_id = $2',
       [opportunityId, studentId]

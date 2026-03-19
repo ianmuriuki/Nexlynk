@@ -46,11 +46,12 @@ function Hero() {
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=1800&q=80&auto=format&fit=crop')`,
+          backgroundImage: `url('images/img1.jpg')`,
         }}
       />
-      {/* Dark overlay — navy tint */}
-      <div className="absolute inset-0 bg-gradient-to-r from-navy/92 via-navy/80 to-navy/50" />
+      
+      <div className="absolute inset-0 bg-navy/78" />
+      <div className="absolute inset-0 bg-gradient-to-r from-navy/40 via-navy/10 to-transparent" />
       {/* Bottom fade for smooth transition */}
       <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-white to-transparent" />
 
