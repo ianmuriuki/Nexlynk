@@ -49,4 +49,6 @@ router.post(
   ctrl.applyToOpportunity
 );
 
+router.post('/opportunities/:id/view', requireAuth, requireRole('student'), ctrl.trackView);
+
 module.exports = router;

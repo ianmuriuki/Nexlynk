@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, EyeOff, Zap, ArrowRight, AlertCircle, Info } from 'lucide-react'
+import { Eye, EyeOff, ArrowRight, AlertCircle, Info } from 'lucide-react'
+import NexlynkLogo from '@/components/shared/NexlynkLogo'
 import toast from 'react-hot-toast'
 import useAuthStore from '@/store/authStore'
 import { authAPI, companyAPI } from '@/api/client'
@@ -113,10 +114,7 @@ export default function RegisterPage() {
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full pointer-events-none"
           style={{ background: 'radial-gradient(circle, rgba(26,86,219,.45) 0%, transparent 65%)' }} />
         <Link to="/" className="flex items-center gap-2.5 relative z-10">
-          <div className="w-9 h-9 bg-blue-DEFAULT rounded-xl flex items-center justify-center">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-serif font-bold text-xl text-white">Nexlynk</span>
+          <NexlynkLogo variant="full" />
         </Link>
         <div className="flex-1 flex flex-col justify-center relative z-10">
           <h2 className="font-serif text-4xl font-black text-white leading-tight mb-5">
@@ -139,8 +137,7 @@ export default function RegisterPage() {
           className="w-full max-w-[460px] py-4"
         >
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 bg-navy rounded-xl flex items-center justify-center"><Zap className="w-4 h-4 text-white" /></div>
-            <span className="font-serif font-bold text-navy">Nexlynk</span>
+            <NexlynkLogo variant="full" />
           </div>
 
           <h1 className="font-serif text-3xl font-black text-navy mb-1">Create account</h1>

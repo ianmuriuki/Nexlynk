@@ -1,4 +1,5 @@
 // src/controllers/company.controller.js
+const { safeAdd, emailQueue } = require('../jobs/queue');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/db');
@@ -35,6 +36,23 @@ exports.registerCompany = async (req, res, next) => {
        RETURNING *`,
       [userId, name, industry, company_size, website, description, contact_name, contact_email, contact_phone]
     );
+
+    // Queue verification + pending approval emails
+    const crypto = require('crypto');
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await query(
+      `INSERT INTO email_verifications (user_id, token, expires_at)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (user_id) DO UPDATE SET token = $2, expires_at = $3, used = FALSE`,
+      [userId, verificationToken, expiresAt]
+    );
+    await safeAdd(emailQueue, 'sendVerificationEmail', {
+      userId, email, name, token: verificationToken,
+    });
+    await safeAdd(emailQueue, 'sendCompanyRegisteredEmail', {
+      email, companyName: name,
+    });
 
     logger.info({ event: 'company_registered', userId, name });
 
@@ -252,7 +270,7 @@ exports.listApplicants = async (req, res, next) => {
        JOIN users u              ON u.id  = a.student_id
        JOIN opportunities o      ON o.id  = a.opportunity_id
        ${where}
-       ORDER BY a.created_at DESC
+       ORDER BY a.applied_at DESC
        LIMIT $${idx} OFFSET $${idx + 1}`,
       [...values, limit, offset]
     );
@@ -287,8 +305,36 @@ exports.updateApplicationStatus = async (req, res, next) => {
       return res.status(404).json({ error: 'Not Found', message: 'Application not found' });
     }
 
+  // Fetch student + opportunity details for email
+    const { rows: student } = await query(
+      `SELECT u.email, sp.name
+       FROM users u JOIN student_profiles sp ON sp.id = u.id
+       WHERE u.id = $1`,
+      [rows[0].student_id]
+    );
+    const { rows: appDetails } = await query(
+      `SELECT o.title AS opportunity_title, cp.name AS company_name
+       FROM applications a
+       JOIN opportunities o ON o.id = a.opportunity_id
+       JOIN company_profiles cp ON cp.id = o.company_id
+       WHERE a.id = $1`,
+      [req.params.appId]
+    );
+    if (student.length) {
+      const { safeAdd, emailQueue } = require('../jobs/queue');
+      await safeAdd(emailQueue, 'sendApplicationStatusEmail', {
+        email:            student[0].email,
+        studentName:      student[0].name,
+        newStatus:        status,
+        applicationId:    req.params.appId,
+        opportunityTitle: appDetails[0]?.opportunity_title || '',
+        companyName:      appDetails[0]?.company_name      || '',
+      });
+    }
+
     logger.info({ event: 'application_status_updated', appId: req.params.appId, status });
     return res.json({ data: rows[0] });
+
   } catch (err) {
     next(err);
   }

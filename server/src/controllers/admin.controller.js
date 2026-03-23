@@ -193,6 +193,15 @@ exports.rejectCompany = async (req, res, next) => {
        JSON.stringify({ status: 'rejected' })]
     );
 
+    // Get company email for notification
+    const { rows: user } = await query('SELECT email FROM users WHERE id = $1', [id]);
+    if (user.length) {
+      await safeAdd(emailQueue, 'sendCompanyRejectedEmail', {
+        email: user[0].email,
+        companyName: rows[0].name,
+      });
+    }
+
     logger.info({ event: 'company_rejected', adminId: req.user.id, companyId: id });
 
     return res.json({ message: 'Company rejected', data: rows[0] });
@@ -237,18 +246,30 @@ exports.updateApplicationStatus = async (req, res, next) => {
        JSON.stringify({ status })]
     );
 
+
+
     const { rows: student } = await query(
-      'SELECT u.email, sp.name FROM users u JOIN student_profiles sp ON sp.id = u.id WHERE u.id = $1',
-      [before[0].student_id]
-    );
-    if (student.length) {
-      await safeAdd(emailQueue, 'sendApplicationStatusEmail', {
-        email: student[0].email,
-        studentName: student[0].name,
-        newStatus: status,
-        applicationId: id,
-      });
-    }
+  'SELECT u.email, sp.name FROM users u JOIN student_profiles sp ON sp.id = u.id WHERE u.id = $1',
+  [before[0].student_id]
+);
+const { rows: appDetails } = await query(
+  `SELECT o.title AS opportunity_title, cp.name AS company_name
+   FROM applications a
+   JOIN opportunities o ON o.id = a.opportunity_id
+   JOIN company_profiles cp ON cp.id = o.company_id
+   WHERE a.id = $1`,
+  [id]
+);
+if (student.length) {
+  await safeAdd(emailQueue, 'sendApplicationStatusEmail', {
+    email:            student[0].email,
+    studentName:      student[0].name,
+    newStatus:        status,
+    applicationId:    id,
+    opportunityTitle: appDetails[0]?.opportunity_title || '',
+    companyName:      appDetails[0]?.company_name      || '',
+  });
+}
 
     if (status === 'placed') {
       const { rows: opp } = await query(
@@ -353,12 +374,11 @@ exports.getStats = async (req, res, next) => {
        FROM applications
        WHERE applied_at >= NOW() - INTERVAL '${cfg.interval}'
        GROUP BY date_trunc('${cfg.trunc}', applied_at)
-       ORDER BY period ASC`,
-      [cfg.trunc]
+       ORDER BY period ASC`
     );
 
     return res.json({
-      data: rows.map(r => ({
+      data: applications.map(r => ({
         period:       r.period,
         applications: parseInt(r.applications, 10),
         placements:   parseInt(r.placements,   10),

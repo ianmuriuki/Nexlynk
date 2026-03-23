@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  ArrowRight, Zap, CheckCircle, Shield,
+  ArrowRight, CheckCircle, Shield,
   TrendingUp, FileText, Bell, Star, BarChart3
 } from 'lucide-react'
+import NexlynkLogo from '@/components/shared/NexlynkLogo'
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 28 },
@@ -17,10 +18,7 @@ function Navbar() {
     <nav className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200/80">
       <div className="w-full max-w-screen-xl mx-auto px-8 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-navy rounded-xl flex items-center justify-center">
-            <Zap className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-serif font-bold text-[19px] text-navy tracking-tight">Nexlynk</span>
+          <NexlynkLogo variant="full" />
         </Link>
         <div className="hidden md:flex items-center gap-8">
           <a href="#how"      className="text-sm text-slate-500 hover:text-navy transition-colors font-medium">How it works</a>
@@ -291,10 +289,7 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-4 gap-10 mb-12">
             <div>
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 bg-blue-DEFAULT rounded-xl flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-white" />
-                </div>
-                <span className="font-serif font-bold text-white text-lg">Nexlynk</span>
+                <NexlynkLogo variant="full" className="h-8" />
               </div>
               <p className="text-sm text-white/40 leading-relaxed">
                 Connecting Kenya's next generation of talent with the companies shaping the future.

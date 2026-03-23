@@ -1,10 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, Briefcase, CheckCircle, Search, Clock, Upload } from 'lucide-react'
 import useAuthStore from '@/store/authStore'
 import { studentAPI, opportunityAPI } from '@/api/client'
-import toast from 'react-hot-toast'
+import ApplyModal from '@/components/shared/ApplyModal'
 import clsx from 'clsx'
 
 const STATUS_MAP = {
@@ -15,9 +16,9 @@ const STATUS_MAP = {
 }
 
 const TYPE_ICON = {
-  internship: '💼',
+  internship:  '💼',
   'part-time': '⏰',
-  contract:   '📝',
+  contract:    '📝',
   'full-time': '🎯',
 }
 
@@ -47,10 +48,9 @@ function StatCard({ icon: Icon, label, value, accent, loading }) {
 
 export default function StudentDashboard() {
   const { user } = useAuthStore()
-  const qc = useQueryClient()
+  const qc       = useQueryClient()
+  const [selectedOpp, setSelectedOpp] = useState(null)
 
-  // All three queries share keys with StudentProfile and DashboardLayout
-  // so any update anywhere instantly reflects here too
   const { data: profileData, isLoading: profileLoading } = useQuery({
     queryKey: ['student-profile', user?.id],
     queryFn:  () => studentAPI.getProfile(user.id).then(r => r.data.data ?? r.data),
@@ -68,33 +68,28 @@ export default function StudentDashboard() {
     queryFn:  () => opportunityAPI.list({ limit: 6 }).then(r => r.data),
   })
 
-  const applyMutation = useMutation({
-    mutationFn: (id) => opportunityAPI.apply(id),
-    onSuccess:  () => {
-      toast.success('Application submitted!')
-      qc.invalidateQueries(['student-applications', user?.id])
-    },
-    onError: (e) => {
-      if (e.status === 409) toast.error('You have already applied to this opportunity.')
-      else toast.error(e?.message || 'Could not apply')
-    },
-  })
-
   const profile      = profileData
   const completion   = profile?.profile_completion ?? 0
-  const applications = appsData?.data ?? appsData ?? []
+  const applications = Array.isArray(appsData) ? appsData : (appsData?.data ?? [])
   const opps         = oppsData?.data ?? oppsData ?? []
   const firstName    = (profile?.name || user?.name || 'there').split(' ')[0]
 
   const pendingCount     = applications.filter(a => a.status === 'pending').length
   const shortlistedCount = applications.filter(a => a.status === 'shortlisted').length
   const totalOpps        = oppsData?.pagination?.total ?? opps.length
-
-  // Use opportunity_id from the flat applications response
-  const appliedIds = new Set(applications.map(a => a.opportunity_id))
+  const appliedIds       = new Set(applications.map(a => a.opportunity_id))
 
   return (
     <div className="p-6 lg:p-8 max-w-screen-xl">
+
+      {/* Apply Modal */}
+      {selectedOpp && (
+        <ApplyModal
+          opportunity={selectedOpp}
+          onClose={() => setSelectedOpp(null)}
+          onSuccess={() => qc.invalidateQueries(['student-applications', user?.id])}
+        />
+      )}
 
       {/* Header */}
       <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
@@ -108,24 +103,19 @@ export default function StudentDashboard() {
         </p>
       </motion.div>
 
-      {/* Profile completion banner — hides automatically at 100% */}
+      {/* Profile completion banner */}
       {!profileLoading && completion < 100 && (
-        <motion.div
-          initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:.1 }}
+        <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:.1 }}
           className="bg-navy rounded-2xl px-6 py-5 flex items-center justify-between gap-6 mb-7"
         >
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2.5">
-              <p className="text-white font-semibold text-sm">
-                Complete your profile to get more matches
-              </p>
+              <p className="text-white font-semibold text-sm">Complete your profile to get more matches</p>
               <span className="text-blue-300 text-sm font-bold">{completion}%</span>
             </div>
             <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-blue-400 to-blue-300 rounded-full transition-all duration-700"
-                style={{ width: `${completion}%` }}
-              />
+              <div className="h-full bg-gradient-to-r from-blue-400 to-blue-300 rounded-full transition-all duration-700"
+                style={{ width: `${completion}%` }} />
             </div>
           </div>
           <Link to="/student/profile" className="btn-primary whitespace-nowrap text-xs">
@@ -150,7 +140,7 @@ export default function StudentDashboard() {
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h2 className="font-semibold text-navy">Open opportunities</h2>
-                <p className="text-xs text-slate-400 mt-0.5">Latest published listings</p>
+                <p className="text-xs text-slate-400 mt-0.5">Click Apply to view full details before submitting</p>
               </div>
               <Link to="/student/opportunities" className="text-sm font-semibold text-blue-DEFAULT flex items-center gap-1 hover:gap-2 transition-all">
                 Browse all <ArrowRight className="w-3.5 h-3.5" />
@@ -182,11 +172,9 @@ export default function StudentDashboard() {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-navy truncate">{opp.title}</p>
                         <p className="text-xs text-slate-400 mt-0.5">
-                          {/* company_name is flat from the JOIN — not nested */}
                           {opp.company_name}
                           {opp.location ? ` · ${opp.location}` : ''}
-                          {/* stipend is a string e.g. "KES 20,000/mo" */}
-                          {opp.stipend ? ` · ${opp.stipend}` : ''}
+                          {opp.stipend  ? ` · ${opp.stipend}`  : ''}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
@@ -197,8 +185,7 @@ export default function StudentDashboard() {
                           ? <span className="text-xs font-semibold text-success">Applied ✓</span>
                           : (
                             <button
-                              onClick={() => applyMutation.mutate(opp.id)}
-                              disabled={applyMutation.isPending}
+                              onClick={() => setSelectedOpp(opp)}
                               className="btn-primary btn-sm"
                             >Apply</button>
                           )
@@ -232,27 +219,20 @@ export default function StudentDashboard() {
                 </div>
               ))
               : applications.length === 0
-                ? (
-                  <div className="px-6 py-10 text-center">
-                    <p className="text-slate-400 text-sm">No applications yet.</p>
-                  </div>
-                )
+                ? <div className="px-6 py-10 text-center"><p className="text-slate-400 text-sm">No applications yet.</p></div>
                 : applications.slice(0, 5).map((app) => {
                   const s       = STATUS_MAP[app.status] || STATUS_MAP.pending
-                  // opportunity is a nested JSON object from getApplications JOIN
                   const title   = app.opportunity?.title   || 'Opportunity'
                   const company = app.opportunity?.company_name || ''
-                  const date    = app.created_at
-                    ? new Date(app.created_at).toLocaleDateString('en-KE', { day:'numeric', month:'short' })
+                  const date    = app.applied_at || app.created_at
+                    ? new Date(app.applied_at || app.created_at).toLocaleDateString('en-KE', { day:'numeric', month:'short' })
                     : ''
                   return (
                     <div key={app.id} className="px-6 py-4 flex items-center gap-4 border-b border-slate-100 last:border-0 hover:bg-slate-50/80 transition-colors">
                       <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">🏢</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-navy truncate">{title}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          {company}{date ? ` · Applied ${date}` : ''}
-                        </p>
+                        <p className="text-xs text-slate-400 mt-0.5">{company}{date ? ` · Applied ${date}` : ''}</p>
                       </div>
                       <span className={s.cls}>{s.label}</span>
                     </div>
@@ -264,8 +244,6 @@ export default function StudentDashboard() {
 
         {/* Right column */}
         <div className="space-y-5">
-
-          {/* Profile card — live data from same query key */}
           <div className="card overflow-hidden">
             <div className="h-14 bg-gradient-to-r from-navy to-blue-800" />
             <div className="px-5 pb-5">
@@ -284,18 +262,14 @@ export default function StudentDashboard() {
                   <span className="text-blue-DEFAULT">{completion}%</span>
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-DEFAULT rounded-full transition-all duration-700"
-                    style={{ width: `${completion}%` }}
-                  />
+                  <div className="h-full bg-blue-DEFAULT rounded-full transition-all duration-700"
+                    style={{ width: `${completion}%` }} />
                 </div>
               </div>
               {profile?.skills?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   {profile.skills.slice(0, 5).map((s) => (
-                    <span key={s} className="text-[11px] font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
-                      {s}
-                    </span>
+                    <span key={s} className="text-[11px] font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100">{s}</span>
                   ))}
                 </div>
               )}
@@ -305,7 +279,6 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          {/* CV status — live from same query key */}
           <div className="card p-5">
             <h3 className="font-semibold text-navy text-sm mb-3 flex items-center gap-2">
               <Upload className="w-4 h-4 text-slate-400" /> Your CV
@@ -321,7 +294,6 @@ export default function StudentDashboard() {
               </div>
             )}
           </div>
-
         </div>
       </div>
     </div>

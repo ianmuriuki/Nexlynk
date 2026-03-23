@@ -1,40 +1,70 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/jpeg" href="/icons/icon1.jpeg" />
+    <link rel="apple-touch-icon" href="/icons/icon1.jpeg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <!-- CSP — tightened; api proxy handles actual API origin
-     This is a simple Content Security Policy to enhance security -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="
-        default-src 'self';
-        script-src  'self';
-        style-src   'self' 'unsafe-inline' https://fonts.googleapis.com;
-        font-src    'self' https://fonts.gstatic.com;
-        img-src     'self' data: blob: https://images.unsplash.com;
-        connect-src 'self' http://localhost:5000;
-      "
-    />
-    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="X-Frame-Options"        content="DENY" />
-    <meta http-equiv="Referrer-Policy"        content="strict-origin-when-cross-origin" />
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
-    />
-
-    <title>Nexlynk — Internship Management Platform</title>
-    <meta name="description" content="Nexlynk connects ambitious students with forward-thinking companies. Streamlined internship management — from discovery to placement." />
+    <meta name="theme-color" content="#0B1D3F" />
+    <title>Nexlynk — Internship Platform</title>
+    <style>
+      /* Loading screen shown before React mounts */
+      #app-loading {
+        position: fixed;
+        inset: 0;
+        background: #0B1D3F;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.3s ease;
+      }
+      #app-loading img {
+        width: 72px;
+        height: 72px;
+        border-radius: 16px;
+        object-fit: cover;
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+      #app-loading p {
+        margin-top: 16px;
+        color: rgba(255,255,255,0.4);
+        font-family: system-ui, sans-serif;
+        font-size: 13px;
+        letter-spacing: 0.05em;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%       { opacity: 0.6; transform: scale(0.95); }
+      }
+    </style>
   </head>
   <body>
+    <!-- Loading screen — hidden by JS once React mounts -->
+    <div id="app-loading">
+      <img src="/icons/icon1.jpeg" alt="Nexlynk" />
+      <p>Loading Nexlynk...</p>
+    </div>
+
     <div id="root"></div>
+
+    <script>
+      // Hide loading screen once React root renders
+      const observer = new MutationObserver(() => {
+        const root = document.getElementById('root')
+        if (root && root.children.length > 0) {
+          const loader = document.getElementById('app-loading')
+          if (loader) {
+            loader.style.opacity = '0'
+            setTimeout(() => loader.remove(), 300)
+          }
+          observer.disconnect()
+        }
+      })
+      observer.observe(document.getElementById('root'), { childList: true })
+    </script>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

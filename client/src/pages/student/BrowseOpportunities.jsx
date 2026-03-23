@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Search, MapPin, Briefcase, X } from 'lucide-react'
 import { opportunityAPI, studentAPI } from '@/api/client'
+import ApplyModal from '@/components/shared/ApplyModal'
 import useAuthStore from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -17,7 +18,7 @@ const TYPE_STYLE = {
   'full-time':'bg-success-light text-success-dark',
 }
 
-function OppCard({ opp, onApply, applying, alreadyApplied }) {
+function OppCard({ opp, onApply, alreadyApplied }) {
   // Backend returns application_deadline not deadline
   const deadline = opp.application_deadline
     ? new Date(opp.application_deadline).toLocaleDateString('en-KE', {
@@ -79,8 +80,8 @@ function OppCard({ opp, onApply, applying, alreadyApplied }) {
           ? <span className="text-xs font-bold text-success flex items-center gap-1">✓ Applied</span>
           : (
             <button
-              onClick={() => onApply(opp.id)}
-              disabled={applying}
+              onClick={() => onApply(opp)}
+              disabled={false}
               className="btn-primary btn-sm ml-auto"
             >Apply now</button>
           )
@@ -93,6 +94,7 @@ function OppCard({ opp, onApply, applying, alreadyApplied }) {
 export default function BrowseOpportunities() {
   const { user } = useAuthStore()
   const qc = useQueryClient()
+  const [selectedOpp, setSelectedOpp] = useState(null)
   const [search,     setSearch]  = useState('')
   const [typeFilter, setType]    = useState('All')
   const [page,       setPage]    = useState(1)
@@ -136,6 +138,13 @@ export default function BrowseOpportunities() {
 
   return (
     <div className="p-6 lg:p-8 max-w-screen-xl">
+      {selectedOpp && (
+        <ApplyModal
+          opportunity={selectedOpp}
+          onClose={() => setSelectedOpp(null)}
+          onSuccess={() => qc.invalidateQueries(['student-applications', user?.id])}
+        />
+      )}
       <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
         <h1 className="font-serif text-2xl font-bold text-navy">Browse Opportunities</h1>
         <p className="text-slate-500 text-sm mt-1">
@@ -211,8 +220,7 @@ export default function BrowseOpportunities() {
             <OppCard
               key={opp.id}
               opp={opp}
-              onApply={(id) => applyMutation.mutate(id)}
-              applying={applyMutation.isPending}
+              onApply={(opp) => setSelectedOpp(opp)}
               alreadyApplied={appliedIds.has(opp.id)}
             />
           ))}

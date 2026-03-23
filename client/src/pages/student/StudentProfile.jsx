@@ -56,7 +56,7 @@ export default function StudentProfile() {
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['student-profile', user?.id],
-    queryFn:  () => studentAPI.getProfile(user.id).then(r => r.data.data ?? r.data),
+    queryFn:  () => studentAPI.getProfile(user.id).then(r => r.data),
     enabled:  !!user?.id,
   })
 

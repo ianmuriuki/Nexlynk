@@ -1,11 +1,15 @@
 import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import useAuthStore from '@/store/authStore'
+import PageLoader from '@/components/shared/PageLoader'
+import NotFound   from '@/pages/NotFound'
 
 const LandingPage         = lazy(() => import('@/pages/landing/LandingPage'))
 const LoginPage           = lazy(() => import('@/pages/auth/LoginPage'))
 const RegisterPage        = lazy(() => import('@/pages/auth/RegisterPage'))
 const ForgotPasswordPage  = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
+const VerifyEmailPage     = lazy(() => import('@/pages/auth/VerifyEmailPage'))
+const ResetPasswordPage   = lazy(() => import('@/pages/auth/ResetPasswordPage'))
 
 const StudentDashboard    = lazy(() => import('@/pages/student/StudentDashboard'))
 const StudentProfile      = lazy(() => import('@/pages/student/StudentProfile'))
@@ -22,9 +26,6 @@ const AdminCompanies      = lazy(() => import('@/pages/admin/AdminCompanies'))
 const AdminApplications   = lazy(() => import('@/pages/admin/AdminApplications'))
 
 const DashboardLayout     = lazy(() => import('@/components/layout/DashboardLayout'))
-
-import PageLoader from '@/components/shared/PageLoader'
-import NotFound   from '@/pages/NotFound'
 
 function RequireAuth({ roles }) {
   const { user } = useAuthStore()
@@ -44,10 +45,11 @@ function SW({ children }) {
 const router = createBrowserRouter([
   { path: '/', element: <SW><LandingPage /></SW> },
 
-  // Auth pages — open to everyone
   { path: '/login',           element: <SW><LoginPage /></SW>          },
   { path: '/register',        element: <SW><RegisterPage /></SW>       },
   { path: '/forgot-password', element: <SW><ForgotPasswordPage /></SW> },
+  { path: '/verify',          element: <SW><VerifyEmailPage /></SW>    },
+  { path: '/reset-password',  element: <SW><ResetPasswordPage /></SW>  },
 
   {
     element: <RequireAuth roles={['student']} />,

@@ -1,4 +1,5 @@
 // src/controllers/student.controller.js
+const { safeAdd, emailQueue } = require('../jobs/queue');
 const { v4: uuidv4 } = require('uuid');
 const { query } = require('../config/db');
 const { supabaseAdmin } = require('../config/supabase');
@@ -126,7 +127,7 @@ exports.getApplications = async (req, res, next) => {
        JOIN opportunities o      ON o.id  = a.opportunity_id
        JOIN company_profiles cp  ON cp.id = o.company_id
        WHERE a.student_id = $1
-       ORDER BY a.created_at DESC`,
+       ORDER BY a.applied_at DESC`,
       [req.params.id]
     );
     return res.json({ data: rows });
@@ -202,7 +203,10 @@ exports.applyToOpportunity = async (req, res, next) => {
 
   try {
     const { rows: opp } = await query(
-      "SELECT id FROM opportunities WHERE id = $1 AND status = 'published'",
+      `SELECT o.id, o.title, cp.name AS company_name, cp.contact_email AS company_email
+       FROM opportunities o
+       JOIN company_profiles cp ON cp.id = o.company_id
+       WHERE o.id = $1 AND o.status = 'published'`,
       [opportunityId]
     );
     if (!opp.length) {
@@ -222,14 +226,56 @@ exports.applyToOpportunity = async (req, res, next) => {
     }
 
     const { rows } = await query(
-      `INSERT INTO applications (opportunity_id, student_id)
-       VALUES ($1, $2) RETURNING *`,
-      [opportunityId, studentId]
+      `INSERT INTO applications (opportunity_id, student_id, cover_letter)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [opportunityId, studentId, req.body?.cover_letter || null]
     );
+
+    // Fetch student details for emails
+    const { rows: student } = await query(
+      `SELECT u.email, sp.name, sp.university, sp.discipline
+       FROM users u JOIN student_profiles sp ON sp.id = u.id
+       WHERE u.id = $1`,
+      [studentId]
+    );
+
+    if (student.length) {
+      // Email to student — application received
+      await safeAdd(emailQueue, 'sendApplicationReceivedEmail', {
+        studentEmail:     student[0].email,
+        studentName:      student[0].name,
+        opportunityTitle: opp[0].title,
+        companyName:      opp[0].company_name,
+      });
+
+      // Email to company — new application alert
+      if (opp[0].company_email) {
+        await safeAdd(emailQueue, 'sendNewApplicationAlertEmail', {
+          companyEmail:      opp[0].company_email,
+          companyName:       opp[0].company_name,
+          studentName:       student[0].name,
+          studentUniversity: student[0].university,
+          studentDiscipline: student[0].discipline,
+          opportunityTitle:  opp[0].title,
+        });
+      }
+    }
 
     logger.info({ event: 'application_submitted', studentId, opportunityId });
 
     return res.status(201).json({ data: rows[0] });
+  } catch (err) {
+    next(err);
+  }
+};
+// ── POST /opportunities/:id/view ─────────────────────────
+exports.trackView = async (req, res, next) => {
+  try {
+    await query(
+      'UPDATE opportunities SET view_count = view_count + 1 WHERE id = $1',
+      [req.params.id]
+    );
+    return res.json({ ok: true });
   } catch (err) {
     next(err);
   }

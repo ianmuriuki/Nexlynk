@@ -93,7 +93,10 @@ export const authAPI = {
   signup:         (body) => api.post('/auth/signup', body),
   refresh:        (body) => api.post('/auth/refresh', body),
   logout:         (body) => api.post('/auth/logout', body),
-  forgotPassword: (body) => api.post('/auth/forgot-password', body),
+  forgotPassword:       (body)          => api.post('/auth/forgot-password', body),
+  resetPassword:        (body)          => api.post('/auth/reset-password', body),
+  verifyEmail:          (token)         => api.get(`/auth/verify?token=${token}`),
+  resendVerification:   (body)          => api.post('/auth/resend-verification', body),
 }
 
 // ── Student ──────────────────────────────────────────────────
@@ -114,7 +117,8 @@ export const studentAPI = {
 export const opportunityAPI = {
   list:   (params) => api.get('/opportunities', { params }),
   getOne: (id)     => api.get(`/opportunities/${id}`),
-  apply:  (id)     => api.post(`/opportunities/${id}/apply`),
+  trackView: (id) => api.post(`/opportunities/${id}/view`),
+  apply:  (id, body) => api.post(`/opportunities/${id}/apply`, body || {}),
 }
 
 // ── Company ──────────────────────────────────────────────────
