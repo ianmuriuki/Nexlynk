@@ -16,28 +16,14 @@ const schema = z.object({
   password: z.string().min(1, 'Password is required'),
 })
 
-const getTabs = (showAdmin) =>
-  showAdmin ? ['Student', 'Company', 'Admin'] : ['Student', 'Company']
-
-const TAB_HINTS = {
-  Student: 'Sign in as a student to browse and apply for opportunities.',
-  Company: 'Sign in as a company to manage your listings and applicants.',
-  Admin:   'Platform administrator access.',
-}
-
 export default function LoginPage() {
   const navigate  = useNavigate()
   const location  = useLocation()
   const { login } = useAuthStore()
 
-  const params    = new URLSearchParams(location.search)
-  const showAdmin = params.get('admin') === '1'
-  const tabs      = getTabs(showAdmin)
-
-  const [activeTab, setActiveTab] = useState(showAdmin ? 'Admin' : 'Student')
-  const [loading,   setLoading]   = useState(false)
-  const [showPw,    setShowPw]    = useState(false)
-  const [apiError,  setApiError]  = useState('')
+  const [loading,  setLoading]  = useState(false)
+  const [showPw,   setShowPw]   = useState(false)
+  const [apiError, setApiError] = useState('')
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
@@ -48,19 +34,16 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const { user } = await login(email, password)
-
       toast.success('Welcome back!')
-
       const from = location.state?.from?.pathname
       if (from && isSafeRedirect(from)) {
         navigate(from, { replace: true })
         return
       }
-      // Always redirect by actual role from token — tab selection is just a visual hint
       const dest = user.role === 'admin' ? '/admin' : user.role === 'company' ? '/company' : '/student'
       navigate(dest, { replace: true })
     } catch (err) {
-      setApiError(err?.message || 'Login failed. Please try again.')
+      setApiError(err?.message || 'Invalid email or password.')
     } finally {
       setLoading(false)
     }
@@ -68,24 +51,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex font-sans">
-
-      {/* ── Left panel ──────────────────────────────────── */}
       <div className="hidden lg:flex w-[45%] bg-navy flex-col relative overflow-hidden px-12 py-10">
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full pointer-events-none"
           style={{ background: 'radial-gradient(circle, rgba(26,86,219,.45) 0%, transparent 65%)' }} />
         <div className="absolute -bottom-32 -left-32 w-[380px] h-[380px] rounded-full pointer-events-none"
           style={{ background: 'radial-gradient(circle, rgba(14,165,233,.18) 0%, transparent 65%)' }} />
-
-        <Link to="/" className="flex items-center gap-2.5 relative z-10">
+        <Link to="/" className="relative z-10">
           <NexlynkLogo variant="full" />
         </Link>
-
         <div className="flex-1 flex flex-col justify-center relative z-10">
           <h2 className="font-serif text-4xl font-black text-white leading-tight mb-5">
             Your career journey<br />starts <span className="text-blue-300">here</span>
           </h2>
           <p className="text-white/55 text-base leading-relaxed mb-10 max-w-xs">
-            Join thousands of students and hundreds of companies building Kenya's workforce of tomorrow.
+            Join students and companies building Kenya's workforce of tomorrow.
           </p>
           <div className="space-y-3">
             {[
@@ -106,7 +85,6 @@ export default function LoginPage() {
         <p className="text-xs text-white/25 relative z-10">© 2026 Nexlynk Engineers Limited</p>
       </div>
 
-      {/* ── Right panel ─────────────────────────────────── */}
       <div className="flex-1 flex items-center justify-center px-5 py-12 bg-slate-50">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -115,7 +93,7 @@ export default function LoginPage() {
           className="w-full max-w-[420px]"
         >
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <NexlynkLogo variant="white" />
+            <NexlynkLogo variant="full" />
           </div>
 
           <h1 className="font-serif text-3xl font-black text-navy mb-1">Welcome back</h1>
@@ -123,25 +101,6 @@ export default function LoginPage() {
             Don't have an account?{' '}
             <Link to="/register" className="text-blue-DEFAULT font-semibold hover:underline">Sign up free →</Link>
           </p>
-
-          {/* Role tabs — visual hint only, no validation against token role */}
-          <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 mb-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => { setActiveTab(tab); setApiError('') }}
-                className={clsx(
-                  'flex-1 py-2 text-xs font-bold rounded-lg transition-all',
-                  activeTab === tab
-                    ? 'bg-white text-navy shadow-sm'
-                    : 'text-slate-400 hover:text-slate-600'
-                )}
-              >{tab}</button>
-            ))}
-          </div>
-
-          <p className="text-xs text-slate-400 mb-6 px-1">{TAB_HINTS[activeTab]}</p>
 
           {apiError && (
             <div className="flex items-start gap-2.5 bg-danger-light border border-danger/20 rounded-xl px-4 py-3 mb-5 text-sm text-danger-dark">
@@ -193,7 +152,7 @@ export default function LoginPage() {
                   Signing in...
                 </span>
               ) : (
-                <>Sign in as {activeTab} <ArrowRight className="w-4 h-4" /></>
+                <>Sign in <ArrowRight className="w-4 h-4" /></>
               )}
             </button>
           </form>

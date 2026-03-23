@@ -51,6 +51,17 @@ function PasswordStrength({ value }) {
   )
 }
 
+// ─── Field wrapper (MUST be outside RegisterPage to avoid remounting on every render) ───
+function F({ id, label, error, children }) {
+  return (
+    <div className="w-full">
+      <label htmlFor={id} className="block text-sm font-semibold text-slate-700 mb-1.5">{label}</label>
+      {children}
+      {error && <p className="mt-1 text-xs text-danger">{error.message}</p>}
+    </div>
+  )
+}
+
 // ─── Main ──────────────────────────────────────────────────
 export default function RegisterPage() {
   const [searchParams] = useSearchParams()
@@ -97,14 +108,6 @@ export default function RegisterPage() {
       setLoading(false)
     }
   }
-
-  const F = ({ id, label, error, children }) => (
-    <div>
-      <label htmlFor={id} className="block text-sm font-semibold text-slate-700 mb-1.5">{label}</label>
-      {children}
-      {error && <p className="mt-1 text-xs text-danger">{error.message}</p>}
-    </div>
-  )
 
   return (
     <div className="min-h-screen flex font-sans">
@@ -186,7 +189,7 @@ export default function RegisterPage() {
             >
               {isCompany ? (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <F id="name" label="Company name" error={errors.name}>
                       <input id="name" {...register('name')} placeholder="Acme Corp" className={clsx('input', errors.name && 'input-error')} />
                     </F>
@@ -194,7 +197,7 @@ export default function RegisterPage() {
                       <input id="industry" {...register('industry')} placeholder="e.g. Technology" className={clsx('input', errors.industry && 'input-error')} />
                     </F>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <F id="email" label="Work email" error={errors.email}>
                       <input id="email" {...register('email')} type="email" placeholder="hr@company.com" autoComplete="email" className={clsx('input', errors.email && 'input-error')} />
                     </F>
