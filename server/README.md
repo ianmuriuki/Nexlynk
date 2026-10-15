@@ -107,3 +107,10 @@ Run `migrations/001_initial_schema.sql` to create all tables, indexes, constrain
 - **Background jobs**: BullMQ + Redis. Email worker runs as a separate process for resilience.
 - **Audit trail**: All status changes write to the `events` table with old/new values as JSONB.
 - **Pagination**: All list endpoints support `?page=1&limit=20` via `paginate` middleware.
+
+
+
+
+
+
+

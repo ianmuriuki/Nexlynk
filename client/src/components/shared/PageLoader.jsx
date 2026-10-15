@@ -3,7 +3,7 @@ export default function PageLoader() {
     <div className="fixed inset-0 flex items-center justify-center bg-slate-50 z-50">
       <div className="flex flex-col items-center gap-4">
         {/* Animated logo mark for loading state */}
-        <div className="w-12 h-12 bg-navy rounded-2xl flex items-center justify-center animate-pulse">
+        <div className="w-12 h-12 bg-blue rounded-2xl flex items-center justify-center animate-pulse">
           <svg className="w-6 h-6 fill-white" viewBox="0 0 24 24">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>

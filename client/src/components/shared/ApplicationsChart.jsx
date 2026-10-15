@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { adminAPI } from '@/api/client'
+import { adminAPI } from '@/api/admin'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer
@@ -30,12 +30,12 @@ function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-lg px-4 py-3 text-xs">
-      <p className="font-bold text-navy mb-2">{label}</p>
+      <p className="font-bold text-blue mb-2">{label}</p>
       {payload.map(p => (
         <div key={p.dataKey} className="flex items-center gap-2 mb-1">
           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: p.color }} />
           <span className="text-slate-500 capitalize">{p.name}:</span>
-          <span className="font-bold text-navy ml-auto pl-4">{p.value}</span>
+          <span className="font-bold text-blue ml-auto pl-4">{p.value}</span>
         </div>
       ))}
     </div>
@@ -68,7 +68,7 @@ export default function ApplicationsChart() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
         <div>
-          <h2 className="font-semibold text-navy">Applications over time</h2>
+          <h2 className="font-semibold text-blue">Applications over time</h2>
           <div className="flex items-center gap-4 mt-1.5">
             <span className="text-xs text-slate-400 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-blue-DEFAULT inline-block" />
@@ -94,8 +94,8 @@ export default function ApplicationsChart() {
               className={clsx(
                 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap',
                 period === p.key
-                  ? 'bg-white text-navy shadow-sm'
-                  : 'text-slate-500 hover:text-navy'
+                  ? 'bg-white text-blue shadow-sm'
+                  : 'text-slate-500 hover:text-blue'
               )}
             >{p.label}</button>
           ))}

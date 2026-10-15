@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { Search, X, CheckCircle, XCircle, Building2 } from 'lucide-react'
-import { adminAPI } from '@/api/client'
+import { Search, X, CheckCircle, XCircle, Clock, Building2 } from 'lucide-react'
+import { adminAPI } from '@/api/admin'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
@@ -11,6 +11,12 @@ const STATUS_CFG = {
   approved: { cls: 'badge-approved',   label: 'Verified' },
   rejected: { cls: 'badge-rejected',   label: 'Rejected' },
 }
+
+const SUMMARY_CFG = [
+  { key: 'pending',  icon: Clock,       label: 'Awaiting Review', color: 'text-warning' },
+  { key: 'approved', icon: CheckCircle, label: 'Verified',        color: 'text-success' },
+  { key: 'rejected', icon: XCircle,     label: 'Rejected',        color: 'text-danger'  },
+]
 
 const TABS = ['All', 'pending', 'approved', 'rejected']
 
@@ -48,7 +54,7 @@ export default function AdminCompanies() {
   const approveMutation = useMutation({
     mutationFn: (id) => adminAPI.approveCompany(id),
     onSuccess:  () => {
-      toast.success('Company approved ✓')
+      toast.success('Company approved')
       qc.invalidateQueries(['admin-companies'])
       qc.invalidateQueries(['admin-dashboard'])
       qc.invalidateQueries(['admin-companies-pending'])
@@ -67,7 +73,6 @@ export default function AdminCompanies() {
     onError: (e) => toast.error(e?.message || 'Failed'),
   })
 
-  // data is now the array directly after unwrap
   const companies  = Array.isArray(data) ? data : (data?.data ?? [])
   const pagination = data?.pagination
 
@@ -89,7 +94,7 @@ export default function AdminCompanies() {
     <div className="p-6 lg:p-8 max-w-screen-xl">
 
       <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
-        <h1 className="font-serif text-2xl font-bold text-navy">Company Management</h1>
+        <h1 className="font-serif text-2xl font-bold text-blue">Company Management</h1>
         <p className="text-slate-500 text-sm mt-1">
           {isLoading ? 'Loading...' : `${pagination?.total ?? companies.length} companies registered`}
           {counts.pending > 0 && (
@@ -100,19 +105,13 @@ export default function AdminCompanies() {
 
       {/* Status summary */}
       <div className="grid grid-cols-3 gap-3 mb-6">
-        {[
-          { key: 'pending',  icon: '⏳', color: 'text-warning-dark', bg: 'bg-warning-light', label: 'Awaiting Review' },
-          { key: 'approved', icon: '✅', color: 'text-success-dark', bg: 'bg-success-light', label: 'Verified'        },
-          { key: 'rejected', icon: '❌', color: 'text-danger',       bg: 'bg-danger-light',  label: 'Rejected'        },
-        ].map(({ key, icon, color, bg, label }) => (
+        {SUMMARY_CFG.map(({ key, icon: Icon, label, color }) => (
           <button key={key}
             onClick={() => { setTab(tab === key ? 'All' : key); setPage(1) }}
-            className={clsx('card p-4 flex items-center gap-3 hover:shadow-card-hover transition-all',
-              tab === key && 'ring-2 ring-blue-DEFAULT'
-            )}>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl ${bg}`}>{icon}</div>
+            className={clsx('tile', tab === key && 'ring-2 ring-blue-DEFAULT')}>
+            <div className="tile-icon"><Icon className={clsx('w-5 h-5', color)} /></div>
             <div>
-              <div className={`font-serif text-2xl font-bold ${color}`}>{counts[key]}</div>
+              <div className="font-serif text-2xl font-bold text-blue">{counts[key]}</div>
               <div className="text-xs text-slate-500">{label}</div>
             </div>
           </button>
@@ -125,7 +124,7 @@ export default function AdminCompanies() {
           {TABS.map(t => (
             <button key={t} onClick={() => { setTab(t); setPage(1) }}
               className={clsx('px-4 py-1.5 rounded-lg text-xs font-bold capitalize transition-all',
-                tab === t ? 'bg-white text-navy shadow-sm' : 'text-slate-500 hover:text-navy'
+                tab === t ? 'bg-white text-blue shadow-sm' : 'text-slate-500 hover:text-blue'
               )}>{t}</button>
           ))}
         </div>
@@ -162,7 +161,6 @@ export default function AdminCompanies() {
                   </td>
                 </tr>
               ) : filtered.map((co) => {
-                // Server returns registered_at (aliased from u.created_at)
                 const dateRaw    = co.registered_at || co.created_at
                 const date       = dateRaw ? new Date(dateRaw).toLocaleDateString('en-KE', { day:'numeric', month:'short', year:'numeric' }) : '—'
                 const cfg        = STATUS_CFG[co.status] || STATUS_CFG.pending
@@ -174,11 +172,11 @@ export default function AdminCompanies() {
                     <tr key={co.id} className={clsx('hover:bg-slate-50/80 transition-colors', isExpanded && 'bg-blue-50/30')}>
                       <td className="px-5 py-4 cursor-pointer" onClick={() => setExpanded(isExpanded ? null : co.id)}>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-navy flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                          <div className="w-9 h-9 rounded-full bg-blue flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                             {initials}
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-navy">{co.name}</p>
+                            <p className="text-sm font-semibold text-blue">{co.name}</p>
                             <p className="text-xs text-slate-400">{co.email}</p>
                           </div>
                         </div>

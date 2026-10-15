@@ -9,11 +9,12 @@ const morgan  = require('morgan');
 const { apiLimiter }       = require('./middleware/rateLimiter');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
-const authRoutes    = require('./routes/auth.routes');
-const studentRoutes = require('./routes/student.routes');
-const companyRoutes = require('./routes/company.routes');
-const adminRoutes   = require('./routes/admin.routes');
-const filesRoutes   = require('./routes/files.routes');
+const authRoutes        = require('./routes/auth.routes');
+const studentRoutes     = require('./routes/student.routes');
+const companyRoutes     = require('./routes/company.routes');
+const adminRoutes       = require('./routes/admin.routes');
+const filesRoutes       = require('./routes/files.routes');
+const opportunityRoutes = require('./routes/opportunity.routes');
 
 const app = express();
 
@@ -43,19 +44,15 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ── API routes for authentication, students, companies, admin dashboard, and file access (e.g., CVs and logos). Each route module will handle its own sub-routes and apply necessary middleware for authentication and authorization.
-app.use('/api/auth',        authRoutes);
-app.use('/api/students',    studentRoutes);
-app.use('/api/companies',   companyRoutes);
-app.use('/api/admin',       adminRoutes);
-app.use('/api/files',       filesRoutes);
+// ── API routes for authentication, students, companies, admin dashboard, opportunities (public browsing), and file access.
+app.use('/api/auth',          authRoutes);
+app.use('/api/students',      studentRoutes);
+app.use('/api/companies',     companyRoutes);
+app.use('/api/admin',         adminRoutes);
+app.use('/api/files',         filesRoutes);
+app.use('/api/opportunities', opportunityRoutes);
 
-// ── Opportunities route alias (brief: GET /opportunities) ─
-// Re-export the student list endpoint at the top-level too
-app.get('/api/opportunities', require('./middleware/auth').requireAuth, require('./middleware/paginate').paginate(), require('./controllers/student.controller').listOpportunities);
-app.post('/api/opportunities/:id/apply', require('./middleware/auth').requireAuth, require('./middleware/auth').requireRole('student'), require('./controllers/student.controller').applyToOpportunity);
-
-// ── 404 & Error Handling for any routes that are not defined or if any errors occur in the route handlers. The notFound middleware will catch any requests to undefined routes and return a 404 response, while the errorHandler middleware will catch any errors thrown in the route handlers and return a structured error response with appropriate status codes and messages.
+// ── 404 & Error Handling for any routes that are not defined or if any errors occur in the route handlers.
 app.use(notFound);
 app.use(errorHandler);
 

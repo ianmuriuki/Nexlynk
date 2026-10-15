@@ -1,89 +1,46 @@
 import { create } from 'zustand'
-import { tokenStorage } from '@/utils/security'
-import { authAPI } from '@/api/client'
+import { supabase } from '@/lib/supabase'
 
-const REFRESH_KEY = '__nx_rt'
-
-const refreshStorage = {
-  get:    () => sessionStorage.getItem(REFRESH_KEY),
-  set:    (t) => sessionStorage.setItem(REFRESH_KEY, t),
-  remove: () => sessionStorage.removeItem(REFRESH_KEY),
-}
-
-function getInitialState() {
-  try {
-    const token = tokenStorage.get()
-    if (!token) return { user: null, accessToken: null }
-
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    if (payload.exp * 1000 < Date.now()) {
-      tokenStorage.remove()
-      refreshStorage.remove()
-      return { user: null, accessToken: null }
-    }
-
-    return {
-      accessToken: token,
-      user: {
-        id:    payload.sub,
-        role:  payload.role,
-        email: payload.email,
-        name:  payload.name,
-      },
-    }
-  } catch {
-    tokenStorage.remove()
-    refreshStorage.remove()
-    return { user: null, accessToken: null }
+function toUser(session) {
+  const u = session?.user
+  if (!u) return null
+  return {
+    id: u.id,
+    email: u.email,
+    role: u.app_metadata?.role ?? 'student',
+    name: u.user_metadata?.name ?? '',
   }
 }
 
-const initial = getInitialState()
-
-const useAuthStore = create((set) => ({
-  user:        initial.user,
-  accessToken: initial.accessToken,
-  isLoading:   false,
-
-  login: async (email, password) => {
-    set({ isLoading: true })
-    try {
-      const { data } = await authAPI.login({ email, password })
-      const { accessToken, refreshToken, user } = data
-      tokenStorage.set(accessToken)
-      if (refreshToken) refreshStorage.set(refreshToken)
-      set({ user, accessToken, isLoading: false })
-      return { user }
-    } catch (err) {
-      set({ isLoading: false })
-      throw err
+const actions = {
+  async sendCode(email, { create = false, data } = {}) {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: create, data },
+    })
+    if (error) {
+      if (/signups not allowed/i.test(error.message)) {
+        throw new Error('No account found for this email. Please register first.')
+      }
+      throw new Error(error.message)
     }
   },
-
-  logout: async () => {
-    const refreshToken = refreshStorage.get()
-    try { await authAPI.logout({ refreshToken }) } catch { /* swallow */ }
-    tokenStorage.remove()
-    refreshStorage.remove()
-    set({ user: null, accessToken: null })
+  async verifyCode(email, token) {
+    const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
+    if (error) throw new Error('That code is wrong or has expired.')
+    return toUser(data.session)
   },
-
-  setUserFromSignup: (user, accessToken, refreshToken) => {
-    tokenStorage.set(accessToken)
-    if (refreshToken) refreshStorage.set(refreshToken)
-    set({ user, accessToken })
+  async logout() {
+    await supabase.auth.signOut()
   },
-
-  getRefreshToken: () => refreshStorage.get(),
-}))
-
-if (typeof window !== 'undefined') {
-  window.addEventListener('nx:logout', () => {
-    tokenStorage.remove()
-    refreshStorage.remove()
-    useAuthStore.setState({ user: null, accessToken: null })
-  })
 }
 
+
+const useAuthStore = create(() => ({ user: null, ready: false, ...actions }))
+
+supabase.auth.onAuthStateChange((_event, session) => {
+  useAuthStore.setState({ user: toUser(session), ready: true })
+})
+
+
 export default useAuthStore
-export { refreshStorage }

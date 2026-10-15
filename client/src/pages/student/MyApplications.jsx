@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { FileText, Clock, CheckCircle, X, TrendingUp } from 'lucide-react'
-import { studentAPI } from '@/api/client'
+import { studentAPI } from '@/api/opportunities'
 import useAuthStore from '@/store/authStore'
 import clsx from 'clsx'
 
@@ -38,7 +38,7 @@ export default function MyApplications() {
   return (
     <div className="p-6 lg:p-8 max-w-4xl">
       <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
-        <h1 className="font-serif text-2xl font-bold text-navy">My Applications</h1>
+        <h1 className="font-serif text-2xl font-bold text-blue">My Applications</h1>
         <p className="text-slate-500 text-sm mt-1">
           {allApps.length} total application{allApps.length !== 1 ? 's' : ''}
         </p>
@@ -55,7 +55,7 @@ export default function MyApplications() {
                 filter === key && 'ring-2 ring-blue-DEFAULT'
               )}>
               <Icon className="w-4 h-4 text-slate-400 mb-2" />
-              <div className="font-serif text-2xl font-bold text-navy">{counts[key]}</div>
+              <div className="font-serif text-2xl font-bold text-blue">{counts[key]}</div>
               <div className="text-xs text-slate-500 mt-0.5 capitalize">{cfg.label}</div>
             </button>
           )
@@ -92,7 +92,7 @@ export default function MyApplications() {
       ) : filtered.length === 0 ? (
         <div className="card p-14 text-center">
           <FileText className="w-10 h-10 text-slate-200 mx-auto mb-4" />
-          <h3 className="font-semibold text-navy mb-2">
+          <h3 className="font-semibold text-blue mb-2">
             {filter === 'All' ? 'No applications yet' : `No ${filter} applications`}
           </h3>
           <p className="text-slate-400 text-sm">
@@ -124,7 +124,7 @@ export default function MyApplications() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <h3 className="text-sm font-bold text-navy">{title}</h3>
+                        <h3 className="text-sm font-bold text-blue">{title}</h3>
                         <p className="text-xs text-slate-400 mt-0.5">
                           {company}{location ? ` · ${location}` : ''}{type ? ` · ${type}` : ''}
                         </p>

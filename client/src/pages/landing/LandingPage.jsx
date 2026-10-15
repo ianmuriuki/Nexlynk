@@ -1,319 +1,856 @@
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion, useReducedMotion } from "framer-motion";
 import {
-  ArrowRight, CheckCircle, Shield,
-  TrendingUp, FileText, Bell, Star, BarChart3
-} from 'lucide-react'
-import NexlynkLogo from '@/components/shared/NexlynkLogo'
+  ArrowUpRight,
+  Plus,
+  Quote,
+  Menu,
+  X,
+  GraduationCap,
+  Building2,
+  Zap,
+  Shield,
+  Bell,
+  BarChart3,
+  Upload,
+  Activity,
+  Users,
+} from "lucide-react";
+import NexlynkLogo from "@/components/shared/NexlynkLogo";
+import "./landing.css";
+import IMAGES from "./images";
 
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 28 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.65, ease: [.16,.77,.31,1], delay },
-})
+const NAV = [
+  { label: "About", href: "#about" },
+  { label: "Opportunities", href: "#opportunities" },
+  { label: "Services", href: "#services" },
+  { label: "Features", href: "#features" },
+];
 
-// ─── Navbar ────────────────────────────────────────────────
-function Navbar() {
-  return (
-    <nav className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200/80">
-      <div className="w-full max-w-screen-xl mx-auto px-8 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5">
-          <NexlynkLogo variant="full" />
-        </Link>
-        <div className="hidden md:flex items-center gap-8">
-          <a href="#how"      className="text-sm text-slate-500 hover:text-navy transition-colors font-medium">How it works</a>
-          <a href="#features" className="text-sm text-slate-500 hover:text-navy transition-colors font-medium">Features</a>
-          <a href="#roles"    className="text-sm text-slate-500 hover:text-navy transition-colors font-medium">For you</a>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link to="/login"    className="btn-ghost text-sm">Log in</Link>
-          <Link to="/register" className="btn-primary text-sm">
-            Get started <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      </div>
-    </nav>
-  )
+// Placeholder disciplines. Replace with the ones your platform really lists.
+const WORK = [
+  { title: "Civil and Structural", a: "Internships", b: "Attachments" },
+  { title: "Mechanical", a: "Internships", b: "Attachments" },
+  { title: "Electrical", a: "Internships", b: "Attachments" },
+  { title: "Pipelines and Process", a: "Internships", b: "Attachments" },
+];
+
+const SERVICES = [
+  "Student profiles",
+  "Opportunity listings",
+  "Application tracking",
+  "Placement management",
+];
+
+const CAPS = [
+  { icon: Upload, label: "Upload your CV once" },
+  { icon: Activity, label: "Live application status" },
+  { icon: Bell, label: "Email alerts" },
+  { icon: Building2, label: "Company profiles" },
+  { icon: Shield, label: "Secure documents" },
+  { icon: BarChart3, label: "Follow up dashboard" },
+];
+
+const STEPS = [
+  { n: "01", label: "Create your profile" },
+  { n: "02", label: "Discover and connect" },
+  { n: "03", label: "Get placed" },
+];
+
+const WHY = [
+  {
+    t: "Verified companies",
+    d: "Companies are approved before they can post, so students apply to real opportunities.",
+  },
+  {
+    t: "Secure documents",
+    d: "CVs and company documents are stored securely, with signed links that expire automatically.",
+  },
+  {
+    t: "Automatic notifications",
+    d: "Email alerts go out at every stage, from applied to shortlisted to placed.",
+  },
+  {
+    t: "Placement oversight",
+    d: "Admins see students, companies and placements in one place and manage them end to end.",
+  },
+];
+
+const CTA_TAGS = [
+  "Verified company listings",
+  "Real time application status",
+  "Automatic email alerts",
+  "One profile, many applications",
+];
+
+// Generic placeholders. Replace with real quotes before deploying.
+const TESTIMONIALS = [
+  {
+    name: "Student name",
+    role: "University and course",
+    quote: "Replace this with a real quote from a placed student.",
+  },
+  {
+    name: "Company contact",
+    role: "Company name",
+    quote: "Replace this with a real quote from a hiring company.",
+  },
+  {
+    name: "Hiring manager",
+    role: "Company name",
+    quote: "Replace this with a real quote from a hiring manager.",
+  },
+  {
+    name: "Platform admin",
+    role: "Nexlynk Engineers",
+    quote: "Replace this with a real quote from your team.",
+  },
+];
+
+// Placeholder guides. No article pages exist yet, so these render as coming soon.
+const BLOG = [
+  {
+    tag: "Students",
+    title: "How to write an internship CV that gets shortlisted",
+    text: "Practical guides for students and companies are on the way.",
+  },
+  { tag: "Companies", title: "What companies look for in an intern" },
+  { tag: "Students", title: "Preparing for your first week on placement" },
+];
+
+const FOOTER_TOP = [
+  { label: "Log in", to: "/login" },
+  { label: "Find internships", to: "/register" },
+  { label: "Register your company", to: "/register?role=company" },
+  { label: "Sign up", to: "/register" },
+];
+
+const FOOTER_A = [
+  { label: "Home", href: "#top" },
+  { label: "About", href: "#about" },
+  { label: "Opportunities", href: "#opportunities" },
+  { label: "Services", href: "#services" },
+];
+
+const FOOTER_B = [
+  { label: "Features", href: "#features" },
+  { label: "Testimonials", href: "#testimonials" },
+  { label: "Guides", href: "#guides" },
+];
+
+// ─── Helpers ───
+function useTemplateFont() {
+  useEffect(() => {
+    const id = "nx-poppins";
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap";
+    document.head.appendChild(link);
+  }, []);
 }
 
-// ─── Hero ──────────────────────────────────────────────────
+function Reveal({ children, className = "", delay = 0 }) {
+  const reduce = useReducedMotion();
+  if (reduce) return <div className={className}>{children}</div>;
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.6, ease: [0.16, 0.77, 0.31, 1], delay }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function Cover({ src, eager = false }) {
+  if (!src) return null;
+  return (
+    <img
+      className="nx-cover"
+      src={src}
+      alt=""
+      loading={eager ? "eager" : "lazy"}
+    />
+  );
+}
+
+function ArrowSwap() {
+  return (
+    <>
+      <ArrowUpRight className="nx-arr nx-arr-a" />
+      <ArrowUpRight className="nx-arr nx-arr-b" />
+    </>
+  );
+}
+
+function Button({ to, children, onClick }) {
+  return (
+    <Link to={to} className="nx-btn" onClick={onClick}>
+      <span className="nx-btn-text">{children}</span>
+      <span className="nx-circle">
+        <ArrowSwap />
+      </span>
+    </Link>
+  );
+}
+
+function Heading({ label, children }) {
+  return (
+    <div className="nx-heading">
+      <div className="nx-subtitle">
+        <span className="nx-dot" />
+        <span className="nx-caption">{label}</span>
+      </div>
+      <h2 className="nx-h2">{children}</h2>
+    </div>
+  );
+}
+
+// ─── Navbar ───
+function Navbar() {
+  const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
+  return (
+    <header className="nx-navbar">
+      <div className="nx-container nx-nav-pad">
+        <div className="nx-nav-wrap">
+          <Link
+            to="/"
+            className="nx-logo"
+            onClick={close}
+            aria-label="Nexlynk home"
+          >
+            <NexlynkLogo variant="full" />
+          </Link>
+          <nav
+            className={`nx-nav-menu${open ? " is-open" : ""}`}
+            aria-label="Main"
+          >
+            <div className="nx-nav-links">
+              {NAV.map((l) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  className="nx-nav-link"
+                  onClick={close}
+                >
+                  {l.label}
+                </a>
+              ))}
+            </div>
+            <div className="nx-nav-actions">
+              <Link to="/login" className="nx-nav-link" onClick={close}>
+                Log in
+              </Link>
+              <Button to="/register" onClick={close}>
+                Get started
+              </Button>
+            </div>
+          </nav>
+          <button
+            type="button"
+            className="nx-burger"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ─── Hero ───
 function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Background image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('images/img1.jpg')`,
-        }}
-      />
-      
-      <div className="absolute inset-0 bg-navy/78" />
-      <div className="absolute inset-0 bg-gradient-to-r from-navy/40 via-navy/10 to-transparent" />
-      {/* Bottom fade for smooth transition */}
-      <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-white to-transparent" />
+    <section className="nx-hero">
+      <div className="nx-container nx-h100">
+        <div className="nx-hero-wrap">
+          <div className="nx-hero-title">
+            <div className="nx-hero-title-top">
+              {/* <Reveal>
+                <div className="nx-subtitle">
+                  <span className="nx-caption">Now live in Kenya</span>
+                </div>
+              </Reveal> */}
+              <Reveal delay={0.08}>
+                <h1 className="nx-hero-heading">
+                  Where Kenyan talent meets real opportunity
+                </h1>
+              </Reveal>
+            </div>
+            <Reveal delay={0.16}>
+              <p className="nx-body">
+                Nexlynk connects students with verified companies and handles
+                the whole internship process, from discovery to placement, in
+                one place.
+              </p>
+            </Reveal>
+            <Reveal delay={0.24} className="nx-hero-button">
+              <Button to="/register">Find internships</Button>
+            </Reveal>
+          </div>
 
-      <div className="relative w-full max-w-screen-xl mx-auto px-8 pt-28 pb-24">
-        <div className="max-w-2xl">
-          <motion.div {...fadeUp(0)}>
-            <span className="inline-flex items-center gap-2 text-xs font-bold text-blue-300 uppercase tracking-widest mb-6">
-              <span className="w-5 h-px bg-blue-300" /> Now live in Kenya
-            </span>
-          </motion.div>
+          <Reveal className="nx-client">
+            <div className="nx-profiles">
+              <span className="nx-profile">
+                <GraduationCap size={18} />
+              </span>
+              <span className="nx-profile">
+                <Building2 size={18} />
+              </span>
+              <span className="nx-profile">
+                <Zap size={18} />
+              </span>
+            </div>
+            {/* <div>
+              <h6 className="nx-h6">Made for Kenya</h6>
+              <p className="nx-small nx-gray">
+                Students and companies on one platform
+              </p>
+            </div> */}
+          </Reveal>
+        </div>
+      </div>
 
-          <motion.h1
-            {...fadeUp(.1)}
-            className="font-serif text-5xl lg:text-6xl xl:text-7xl leading-[1.03] font-black text-white tracking-tight mb-7"
-          >
-            Where talent meets{' '}
-            <span className="text-blue-300">opportunity</span>
-          </motion.h1>
-
-          <motion.p {...fadeUp(.2)} className="text-lg text-white/70 leading-relaxed mb-10 max-w-xl">
-            Nexlynk connects ambitious students with forward-thinking companies.
-            Streamlined internship management — from discovery to placement.
-          </motion.p>
-
-          <motion.div {...fadeUp(.3)} className="flex flex-wrap gap-4">
-            <Link to="/register" className="btn btn-lg bg-blue-DEFAULT text-white hover:bg-blue-800 shadow-blue active:scale-[.98]">
-              Find internships <ArrowRight className="w-5 h-5" />
-            </Link>
-            <Link to="/register?role=company" className="btn btn-lg bg-white/10 border-2 border-white/30 text-white hover:bg-white/20 hover:border-white backdrop-blur-sm">
-              Post an opportunity
-            </Link>
-          </motion.div>
-
-          {/* Trust indicators — no fake numbers */}
-          <motion.div {...fadeUp(.4)} className="flex flex-wrap gap-6 mt-12 pt-10 border-t border-white/15">
-            {[
-              { icon: '🎓', label: 'Students across Kenya' },
-              { icon: '🏢', label: 'Verified companies' },
-              { icon: '⚡', label: 'Fast placement process' },
-            ].map(({ icon, label }) => (
-              <div key={label} className="flex items-center gap-2.5">
-                <span className="text-xl">{icon}</span>
-                <span className="text-sm text-white/60 font-medium">{label}</span>
+      <div className="nx-hero-image">
+        <Cover src={IMAGES.hero} eager />
+        <div className="nx-hero-cards">
+          <div className="nx-card-top">
+            <div className="nx-card nx-card-ghost" />
+            <div className="nx-card nx-card-primary">
+              <h3 className="nx-h3 nx-white">A few days</h3>
+              <p className="nx-small nx-white">to get placed</p>
+            </div>
+          </div>
+          <div className="nx-card-main">
+            <div className="nx-card-bottom">
+              <div className="nx-card">
+                <h3 className="nx-h3 nx-white">3 roles</h3>
+                <p className="nx-small nx-white">
+                  Students, companies and admins
+                </p>
               </div>
-            ))}
-          </motion.div>
+              <div className="nx-card-right">
+                <p className="nx-body">
+                  Verified companies post opportunities. Students apply
+                  and track every step.
+                </p>
+                <a
+                  href="#about"
+                  className="nx-circle bordered nx-circle-link"
+                  aria-label="Scroll to About"
+                >
+                  <ArrowSwap />
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
-  )
+  );
 }
 
-// ─── Feature Card ──────────────────────────────────────────
-function FeatureCard({ icon: Icon, title, desc, accent }) {
+// ─── About ───
+function About() {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300">
-      <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${accent}`}>
-        <Icon className="w-5 h-5" />
+    <section id="about" className="nx-section">
+      <div className="nx-container">
+        <div className="nx-wrap nx-about" style={{ gap: 0 }}>
+          <div className="nx-about-left">
+            <Reveal>
+              <Heading label="About us">
+                Internship placement without the paperwork
+              </Heading>
+            </Reveal>
+            <div className="nx-about-bottom">
+              <div className="nx-about-info">
+                <Reveal className="nx-about-top">
+                 
+                
+                </Reveal>
+                <Reveal>
+                  <p className="nx-body">
+                    Nexlynk is an internship platform that connects students
+                    with verified companies. Students build one profile and
+                    apply anywhere, while companies review qualified applicants
+                    in a single pipeline.
+                  </p>
+                </Reveal>
+                <Reveal>
+                  <p className="nx-body">
+                    Status updates and email alerts keep everyone in sync, and
+                    admins oversee placements from start to finish.
+                  </p>
+                </Reveal>
+              </div>
+              <Reveal>
+                <Button to="/register">Get started</Button>
+              </Reveal>
+            </div>
+          </div>
+          <Reveal className="nx-about-visual">
+            <div className="nx-about-image">
+              <Cover src={IMAGES.about} />
+            </div>
+          </Reveal>
+        </div>
       </div>
-      <h3 className="font-semibold text-navy text-base mb-2">{title}</h3>
-      <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
-    </div>
-  )
+    </section>
+  );
 }
 
-// ─── Role Card ─────────────────────────────────────────────
-function RoleCard({ emoji, title, desc, perks, to, cta }) {
+// ─── Opportunities ───
+function Work() {
   return (
-    <div className="bg-white/[.04] border border-white/10 hover:bg-white/[.07] rounded-2xl p-8 flex flex-col transition-all duration-300">
-      <div className="text-4xl mb-5">{emoji}</div>
-      <h3 className="font-serif text-xl font-bold text-white mb-3">{title}</h3>
-      <p className="text-sm text-white/55 leading-relaxed mb-5">{desc}</p>
-      <ul className="space-y-2.5 mb-7 flex-1">
-        {perks.map((p) => (
-          <li key={p} className="flex items-start gap-2.5 text-sm">
-            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
-            <span className="text-white/70">{p}</span>
-          </li>
-        ))}
-      </ul>
-      <Link to={to} className="inline-flex items-center gap-2 text-sm font-semibold text-blue-400 group">
-        {cta} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-      </Link>
-    </div>
-  )
-}
-
-// ─── Main ──────────────────────────────────────────────────
-export default function LandingPage() {
-  return (
-    <div className="bg-white font-sans">
-      <Navbar />
-      <Hero />
-
-      {/* ── LOGO STRIP ─────────────────────────────────── */}
-      <section className="py-14 px-8 border-b border-slate-100">
-        <div className="w-full max-w-screen-xl mx-auto">
-          <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest mb-8">
-            Trusted by leading organisations across Kenya
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center items-center">
-            {['Safaricom', 'Equity Bank', 'Andela', 'KCB Group', 'Twiga Foods', 'KPMG', 'Microsoft Kenya'].map((co) => (
-              <div key={co} className="px-5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-400 hover:border-blue-200 hover:text-blue-DEFAULT transition-colors">
-                {co}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ───────────────────────────────── */}
-      <section id="how" className="py-24 px-8 bg-slate-50">
-        <div className="w-full max-w-screen-xl mx-auto">
-          <div className="text-center mb-16">
-            <span className="section-eyebrow justify-center">How it works</span>
-            <h2 className="font-serif text-4xl font-bold text-navy mt-1">Three steps to your placement</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6 relative">
-            <div className="hidden md:block absolute top-10 left-[calc(33%+24px)] right-[calc(33%+24px)] h-px bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200" />
-            {[
-              { n: '01', title: 'Create your profile',  desc: 'Build a complete profile showcasing your skills and experience. Companies set up their branded company profile.' },
-              { n: '02', title: 'Discover & connect',   desc: 'Browse opportunities filtered by discipline and location. Companies review qualified applicants instantly.' },
-              { n: '03', title: 'Get placed',           desc: 'Track your application status in real time. Admins manage placements end-to-end for everyone.' },
-            ].map((step) => (
-              <div key={step.n} className="bg-white rounded-2xl border border-slate-200 p-8 relative">
-                <div className="font-serif text-6xl font-black text-blue-50 leading-none mb-4">{step.n}</div>
-                <h3 className="text-lg font-bold text-navy mb-3">{step.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FEATURES ───────────────────────────────────── */}
-      <section id="features" className="py-24 px-8">
-        <div className="w-full max-w-screen-xl mx-auto">
-          <div className="text-center mb-16">
-            <span className="section-eyebrow justify-center">Platform features</span>
-            <h2 className="font-serif text-4xl font-bold text-navy mt-1">Built for the full placement lifecycle</h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <FeatureCard icon={FileText}  accent="bg-blue-50 text-blue-DEFAULT"  title="Smart tracking"    desc="Real-time status updates keep students and companies in sync across every application." />
-            <FeatureCard icon={Shield}    accent="bg-success-light text-success" title="Secure documents"  desc="CVs and company documents stored securely with signed-URL access that expires automatically." />
-            <FeatureCard icon={Bell}      accent="bg-warning-light text-warning" title="Auto notifications" desc="Email alerts at every stage — applied, shortlisted, placed — sent automatically." />
-            <FeatureCard icon={BarChart3} accent="bg-purple-50 text-purple-600" title="Admin oversight"    desc="Full platform visibility across all students, companies, and placements in one view." />
-          </div>
-        </div>
-      </section>
-
-      {/* ── ROLES ──────────────────────────────────────── */}
-      <section id="roles" className="py-24 px-8 bg-navy">
-        <div className="w-full max-w-screen-xl mx-auto">
-          <div className="text-center mb-16">
-            <span className="text-xs font-bold text-white/40 uppercase tracking-widest flex items-center justify-center gap-2 mb-3">
-              <span className="w-5 h-px bg-white/20" />Who it's for<span className="w-5 h-px bg-white/20" />
-            </span>
-            <h2 className="font-serif text-4xl font-bold text-white">One platform, three perspectives</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            <RoleCard emoji="🎓" title="Students" to="/register"
-              desc="Find, apply, and track internships that match your discipline and ambitions."
-              perks={['Browse verified listings', 'Upload CV once, apply anywhere', 'Real-time application status', 'Profile completion guidance']}
-              cta="Get started as a student"
-            />
-            <RoleCard emoji="🏢" title="Companies" to="/register?role=company"
-              desc="Post opportunities, review qualified candidates, manage your programme efficiently."
-              perks={['Post internships & attachments', 'Filter by skills & discipline', 'Full applicant pipeline view', 'Branded company profile']}
-              cta="Register your company"
-            />
-            <RoleCard emoji="🛡️" title="Administrators" to="/login"
-              desc="Oversee the entire platform — approve companies, manage placements, track outcomes."
-              perks={['Full visibility dashboard', 'Company verification workflow', 'Placement tracking', 'Audit log for all actions']}
-              cta="Admin access"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ───────────────────────────────── */}
-      <section className="py-24 px-8">
-        <div className="w-full max-w-screen-xl mx-auto">
-          <div className="text-center mb-14">
-            <span className="section-eyebrow justify-center">Testimonials</span>
-            <h2 className="font-serif text-4xl font-bold text-navy mt-1">What our community says</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              { quote: 'I applied to three companies and got placed within two weeks. The status tracking kept me informed throughout.', name: 'Amina Mwangi', role: 'CS Student, UoN · Placed at Safaricom', initials: 'AM', color: 'bg-blue-DEFAULT' },
-              { quote: 'We hired three interns this quarter from a single post. Nexlynk consolidated everything in one place.', name: 'Daniel Kariuki', role: 'HR Manager · Equity Bank', initials: 'DK', color: 'bg-info' },
-              { quote: 'The admin dashboard gives me everything I need to manage placements across 40+ companies effortlessly.', name: 'Faith Odhiambo', role: 'Platform Administrator', initials: 'FO', color: 'bg-success' },
-            ].map((t) => (
-              <div key={t.name} className="bg-slate-50 rounded-2xl border border-slate-200 p-7">
-                <div className="flex gap-0.5 mb-4">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-warning text-warning" />)}
+    <section id="opportunities" className="nx-section">
+      <div className="nx-container">
+        <div className="nx-wrap">
+          <Reveal>
+            <Heading label="Opportunities">
+              Find work that fits your discipline
+            </Heading>
+          </Reveal>
+          <Reveal className="nx-work-grid">
+            {WORK.map((w, i) => (
+              <Link key={w.title} to="/register" className="nx-work-card">
+                <div className="nx-work-image">
+                  <Cover src={IMAGES.work[i]} />
+                  <span className="nx-work-arrow">
+                    <ArrowUpRight size={16} />
+                  </span>
                 </div>
-                <p className="text-slate-700 text-sm leading-relaxed italic mb-6">"{t.quote}"</p>
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full ${t.color} flex items-center justify-center text-white text-xs font-bold`}>{t.initials}</div>
-                  <div>
-                    <p className="text-sm font-semibold text-navy">{t.name}</p>
-                    <p className="text-xs text-slate-400">{t.role}</p>
+                <div className="nx-work-info">
+                  <h4 className="nx-h4">{w.title}</h4>
+                  <div className="nx-work-meta">
+                    <span className="nx-body">{w.a}</span>
+                    <span className="nx-divider" />
+                    <span className="nx-body">{w.b}</span>
                   </div>
                 </div>
-              </div>
+              </Link>
+            ))}
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Services ───
+function Services() {
+  return (
+    <section id="services" className="nx-section">
+      <div className="nx-container">
+        <div className="nx-wrap" style={{ gap: 42 }}>
+          <Reveal>
+            <Heading label="Services">Everything the placement needs</Heading>
+          </Reveal>
+          <div className="nx-services">
+            {SERVICES.map((s, i) => (
+              <Reveal key={s}>
+                <Link to="/register" className="nx-service-card">
+                  <div className="nx-service-top">
+                    <div className="nx-service-num">
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
+                    <div className="nx-service-data">
+                      <div className="nx-service-img">
+                        <Cover src={IMAGES.services[i]} />
+                      </div>
+                      <div className="nx-service-left">
+                        <h3 className="nx-h4 nx-service-name">{s}</h3>
+                        <span className="nx-circle bordered">
+                          <ArrowSwap />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </Reveal>
             ))}
           </div>
+          <Reveal>
+            <Button to="/register">Create free account</Button>
+          </Reveal>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      {/* ── CTA ────────────────────────────────────────── */}
-      <section className="py-24 px-8 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0B1D3F 0%, #1a3a7a 100%)' }}
-      >
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(26,86,219,.4) 0%, transparent 65%)' }} />
-        <div className="w-full max-w-screen-xl mx-auto text-center relative">
-          <h2 className="font-serif text-5xl font-black text-white mb-5 max-w-2xl mx-auto text-balance">
-            Ready to find your next opportunity?
-          </h2>
-          <p className="text-white/60 text-lg mb-10">
-            Join students and companies across Kenya already using Nexlynk.
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Link to="/register" className="btn btn-lg bg-white text-navy hover:bg-slate-100 active:scale-[.98]">
-              Create free account <ArrowRight className="w-5 h-5" />
-            </Link>
-            <Link to="/register?role=company" className="btn btn-lg border-2 border-white/30 text-white hover:border-white hover:bg-white/5">
-              Post an opportunity
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FOOTER ─────────────────────────────────────── */}
-      <footer className="bg-navy border-t border-white/[.06] pt-16 pb-8 px-8">
-        <div className="w-full max-w-screen-xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-10 mb-12">
-            <div>
-              <div className="flex items-center gap-2.5 mb-4">
-                <NexlynkLogo variant="full" className="h-8" />
-              </div>
-              <p className="text-sm text-white/40 leading-relaxed">
-                Connecting Kenya's next generation of talent with the companies shaping the future.
-              </p>
-            </div>
-            {[
-              { h: 'Platform', links: ['How it works', 'For students', 'For companies'] },
-              { h: 'Company',  links: ['About us', 'Blog', 'Careers'] },
-              { h: 'Legal',    links: ['Privacy Policy', 'Terms of Service'] },
-            ].map(({ h, links }) => (
-              <div key={h}>
-                <h4 className="text-xs font-bold text-white uppercase tracking-widest mb-4">{h}</h4>
-                {links.map((l) => (
-                  <a key={l} href="#" className="block text-sm text-white/40 hover:text-white transition-colors mb-2.5">{l}</a>
+// ─── How it works ───
+function HowItWorks() {
+  return (
+    <section className="nx-section-bg pad">
+      <div className="nx-container">
+        <div className="nx-wrap">
+          <Reveal>
+            <Heading label="How it works">
+              Simple by design, from profile to placement
+            </Heading>
+          </Reveal>
+          <div className="nx-two">
+            <Reveal className="nx-caps">
+              {CAPS.map(({ icon: Icon, label }) => (
+                <div key={label} className="nx-cap">
+                  <Icon size={28} />
+                  <span className="nx-small">{label}</span>
+                </div>
+              ))}
+            </Reveal>
+            <div className="nx-right">
+              <Reveal>
+                <p className="nx-body">
+                  Create a profile, find verified opportunities that match your
+                  discipline and location, then follow your application until
+                  you are placed. Companies and admins get the same clarity from
+                  their side.
+                </p>
+              </Reveal>
+              <Reveal className="nx-steps">
+                {STEPS.map((s) => (
+                  <div key={s.n} className="nx-step">
+                    <h3 className="nx-h3">{s.n}</h3>
+                    <p className="nx-small nx-gray">{s.label}</p>
+                  </div>
                 ))}
-              </div>
-            ))}
-          </div>
-          <div className="border-t border-white/[.06] pt-7 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-sm text-white/30">© 2026 Nexlynk Engineers Limited. All rights reserved.</p>
-            <p className="text-sm text-white/30">Built with ❤ in Nairobi, Kenya</p>
+              </Reveal>
+            </div>
           </div>
         </div>
-      </footer>
+      </div>
+    </section>
+  );
+}
+
+// ─── Why choose us ───
+function Why() {
+  const [open, setOpen] = useState(0);
+  return (
+    <section id="features" className="nx-section nx-section-top">
+      <div className="nx-container">
+        <div className="nx-wrap">
+          <Reveal>
+            <Heading label="Why Nexlynk">
+              Why students and companies trust us
+            </Heading>
+          </Reveal>
+          <div className="nx-why">
+            <div className="nx-why-left">
+              <Reveal>
+                <p className="nx-body">
+                  We built Nexlynk around safety, clarity and speed, so every
+                  application is tracked and every document stays protected from
+                  the first click to the final placement.
+                </p>
+              </Reveal>
+              <div className="nx-tabs">
+                {WHY.map((w, i) => {
+                  const on = open === i;
+                  return (
+                    <div key={w.t} className={`nx-tab${on ? " is-open" : ""}`}>
+                      <button
+                        type="button"
+                        className="nx-tab-toggle"
+                        aria-expanded={on}
+                        onClick={() => setOpen(on ? null : i)}
+                      >
+                        <span className="nx-large">{w.t}</span>
+                        <span className="nx-tab-arrow">
+                          <Plus size={16} />
+                        </span>
+                      </button>
+                      <div className="nx-tab-list">
+                        <div className="nx-tab-list-inner">
+                          <p className="nx-body nx-tab-answer">{w.d}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <Reveal className="nx-why-image">
+              <Cover src={IMAGES.why} />
+            </Reveal>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── CTA ───
+function Cta() {
+  return (
+    <section className="nx-section">
+      <div className="nx-container">
+        <Reveal className="nx-cta">
+          <div className="nx-cta-image">
+            <Cover src={IMAGES.cta} />
+            <div className="nx-cta-shade" />
+          </div>
+          <div className="nx-cta-text">
+            <h2 className="nx-h5 nx-white">What you get on Nexlynk:</h2>
+            <div className="nx-cta-tags">
+              {CTA_TAGS.map((t) => (
+                <div key={t} className="nx-cta-tag">
+                  <span className="nx-small nx-white">{t}</span>
+                </div>
+              ))}
+            </div>
+            <div className="nx-cta-btn">
+              <Button to="/register">Create free account</Button>
+            </div>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ─── Testimonials ───
+function Testimonials() {
+  const [cur, setCur] = useState(0);
+  const t = TESTIMONIALS[cur];
+  return (
+    <section id="testimonials" className="nx-section">
+      <div className="nx-container">
+        <div className="nx-wrap">
+          <Reveal>
+            <Heading label="Testimonials">Words from our community</Heading>
+          </Reveal>
+          <Reveal>
+            <div className="nx-tt">
+              <div className="nx-tt-left">
+                <Quote size={56} />
+              </div>
+              <div className="nx-tt-center">
+                <p className="nx-large nx-gray">&ldquo;{t.quote}&rdquo;</p>
+                <div className="nx-tt-who">
+                  <h5 className="nx-h5">{t.name}</h5>
+                  <p className="nx-small nx-gray">{t.role}</p>
+                </div>
+              </div>
+              <div className="nx-tt-image">
+                <Cover src={IMAGES.testimonials[cur]} />
+              </div>
+            </div>
+            <div className="nx-tt-menu" role="tablist">
+              {TESTIMONIALS.map((x, i) => (
+                <button
+                  key={x.name}
+                  type="button"
+                  role="tab"
+                  aria-selected={cur === i}
+                  className={`nx-tt-link${cur === i ? " is-current" : ""}`}
+                  onClick={() => setCur(i)}
+                >
+                  {x.name}
+                </button>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Blog ───
+function Blog() {
+  const [big, ...small] = BLOG;
+  return (
+    <section id="guides" className="nx-section-bg pad-main">
+      <div className="nx-container">
+        <div className="nx-wrap">
+          <Reveal>
+            <Heading label="Guides">Advice for your internship journey</Heading>
+          </Reveal>
+          <Reveal className="nx-blog-row">
+            <article className="nx-blog-card nx-blog-big">
+              <div className="nx-blog-top">
+                <div className="nx-blog-date">
+                  <h2 className="nx-h6">{big.tag}</h2>
+                  <p className="nx-small nx-gray">Coming soon</p>
+                </div>
+                <div className="nx-blog-image">
+                  <Cover src={IMAGES.blog[0]} />
+                </div>
+              </div>
+              <div className="nx-blog-bottom">
+                <div className="nx-blog-title">
+                  <h3 className="nx-h5">{big.title}</h3>
+                  <p className="nx-body">{big.text}</p>
+                </div>
+              </div>
+            </article>
+            <div className="nx-blog-small-col">
+              {small.map((b, i) => (
+                <article key={b.title} className="nx-blog-card">
+                  <div className="nx-blog-data">
+                    <div className="nx-blog-info">
+                      <div className="nx-blog-left">
+                        <div className="nx-blog-topdate">
+                          <span className="nx-small nx-gray">{b.tag}</span>
+                          <span className="nx-blog-line" />
+                          <span className="nx-small nx-gray">Coming soon</span>
+                        </div>
+                        <h3 className="nx-large">{b.title}</h3>
+                      </div>
+                    </div>
+                    <div className="nx-blog-thumb">
+                      <Cover src={IMAGES.blog[i + 1]} />
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Footer ───
+function FooterForm() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const submit = (e) => {
+    e.preventDefault();
+    const value = email.trim();
+    if (!value) return;
+    // Passed through router state, not the URL, so the address is not logged or shared.
+    navigate("/register", { state: { email: value } });
+  };
+  return (
+    <form className="nx-footer-form" onSubmit={submit}>
+      <label htmlFor="nx-email" className="nx-small nx-light">
+        Email address*
+      </label>
+      <div className="nx-field-wrap">
+        <input
+          id="nx-email"
+          type="email"
+          required
+          maxLength={256}
+          className="nx-field"
+          placeholder="enter email address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <button type="submit" className="nx-submit">
+          Submit
+          <span className="nx-submit-circle">
+            <ArrowUpRight size={14} />
+          </span>
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="nx-footer">
+      <div className="nx-container">
+        <div className="nx-footer-box">
+          <div className="nx-social-links">
+            {FOOTER_TOP.map((l) => (
+              <Link key={l.label} to={l.to} className="nx-social">
+                <span className="nx-small nx-white">{l.label}</span>
+                <ArrowUpRight size={16} className="nx-arr" />
+              </Link>
+            ))}
+          </div>
+          <div className="nx-footer-menu">
+            <div className="nx-footer-links">
+              <div className="nx-footer-outer">
+                <div className="nx-footer-list">
+                  {FOOTER_A.map((l) => (
+                    <a key={l.label} href={l.href} className="nx-footer-link">
+                      {l.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <div className="nx-footer-outer">
+                <div className="nx-footer-list">
+                  {FOOTER_B.map((l) => (
+                    <a key={l.label} href={l.href} className="nx-footer-link">
+                      {l.label}
+                    </a>
+                  ))}
+                </div>
+                <p className="nx-small nx-light">
+                  Nexlynk Engineers Limited, Nairobi, Kenya.
+                </p>
+              </div>
+            </div>
+            <div className="nx-footer-right">
+              <p className="nx-large nx-white">
+                Start your placement journey today
+              </p>
+              <div className="nx-footer-right-bottom">
+                <p className="nx-body nx-light">
+                  Nexlynk connects Kenya&rsquo;s next generation of talent with
+                  the companies shaping the future.
+                </p>
+                <FooterForm />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="nx-container">
+        <div className="nx-footer-logo">
+          <NexlynkLogo variant="full" />
+        </div>
+      </div>
+
+      <div className="nx-footer-bottom">
+        <div className="nx-container">
+          <div className="nx-footer-bottom-wrap">
+            <p className="nx-small nx-light">
+              &copy;{new Date().getFullYear()} Nexlynk Engineers Limited.
+            </p>
+            <p className="nx-small nx-light">Built by <a href="https://telvane.co.ke" target="_blank" rel="noreferrer" className="nx-footer-link" style={{ display: "inline" }}>Telvane Technologies</a></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// ─── Page ───
+export default function LandingPage() {
+  useTemplateFont();
+  return (
+    <div id="top" className="nx">
+      <Navbar />
+      <Hero />
+      <About />
+      <Work />
+      <Services />
+      <HowItWorks />
+      <Why />
+      <Cta />
+      <Testimonials />
+      <Blog />
+      <Footer />
     </div>
-  )
+  );
 }

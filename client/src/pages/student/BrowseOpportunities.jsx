@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Search, MapPin, Briefcase, X } from 'lucide-react'
-import { opportunityAPI, studentAPI } from '@/api/client'
+import { opportunityAPI, studentAPI } from '@/api/opportunities'
 import ApplyModal from '@/components/shared/ApplyModal'
 import useAuthStore from '@/store/authStore'
 import toast from 'react-hot-toast'
@@ -33,7 +33,7 @@ function OppCard({ opp, onApply, alreadyApplied }) {
           {opp.type === 'internship' ? '💼' : opp.type === 'part-time' ? '⏰' : opp.type === 'contract' ? '📝' : '🎯'}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-bold text-navy leading-tight">{opp.title}</h3>
+          <h3 className="text-sm font-bold text-blue leading-tight">{opp.title}</h3>
           {/* Backend JOIN returns company_name flat, not nested */}
           <p className="text-xs text-slate-400 mt-0.5">{opp.company_name}</p>
         </div>
@@ -146,7 +146,7 @@ export default function BrowseOpportunities() {
         />
       )}
       <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
-        <h1 className="font-serif text-2xl font-bold text-navy">Browse Opportunities</h1>
+        <h1 className="font-serif text-2xl font-bold text-blue">Browse Opportunities</h1>
         <p className="text-slate-500 text-sm mt-1">
           {pagination?.total ? `${pagination.total} opportunities available` : 'Find your next placement'}
         </p>
@@ -207,7 +207,7 @@ export default function BrowseOpportunities() {
       ) : opps.length === 0 ? (
         <div className="card p-16 text-center">
           <div className="text-5xl mb-4">🔍</div>
-          <h3 className="font-semibold text-navy mb-2">No opportunities found</h3>
+          <h3 className="font-semibold text-blue mb-2">No opportunities found</h3>
           <p className="text-slate-400 text-sm">Try adjusting your search or filters.</p>
           <button
             onClick={() => { setSearch(''); setType('All') }}

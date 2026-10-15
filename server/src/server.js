@@ -1,9 +1,9 @@
 // src/server.js
-require('dotenv').config();
+require("dotenv").config();
 
-const app = require('./app');
-const { testConnection } = require('./config/db');
-const logger = require('./config/logger');
+const app = require("./app");
+const { testConnection } = require("./config/db");
+const logger = require("./config/logger");
 
 const PORT = process.env.PORT || 5000;
 
@@ -13,22 +13,24 @@ async function start() {
   try {
     await testConnection();
     app.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+      logger.info(
+        `Server running on port ${PORT} [${process.env.NODE_ENV || "development"}]`,
+      );
     });
   } catch (err) {
-    logger.error('Failed to start server:', err);
+    logger.error("Failed to start server:", err);
     process.exit(1);
   }
 }
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
+process.on("SIGTERM", () => {
+  logger.info("SIGTERM received, shutting down gracefully");
   process.exit(0);
 });
 
-process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled rejection:', reason);
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled rejection:", reason);
 });
 
 start();

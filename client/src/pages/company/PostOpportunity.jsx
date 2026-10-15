@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { Plus, X, ArrowLeft } from 'lucide-react'
-import { companyAPI } from '@/api/client'
+import { companyAPI } from '@/api/company'
 import useAuthStore from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -140,11 +140,11 @@ export default function PostOpportunity() {
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-sm text-slate-400 hover:text-navy mb-4 transition-colors"
+            className="flex items-center gap-2 text-sm text-slate-400 hover:text-blue mb-4 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
-          <h1 className="font-serif text-2xl font-bold text-navy">Post an Opportunity</h1>
+          <h1 className="font-serif text-2xl font-bold text-blue">Post an Opportunity</h1>
           <p className="text-slate-500 text-sm mt-1">Fill in the details to attract qualified applicants.</p>
         </motion.div>
 
@@ -152,7 +152,7 @@ export default function PostOpportunity() {
 
           {/* ── Basic details ─────────────────────────── */}
           <div className="card p-6 space-y-4">
-            <h2 className="font-semibold text-navy border-b border-slate-100 pb-3">Opportunity details</h2>
+            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3">Opportunity details</h2>
 
             <FieldWrapper label="Job title" required error={errors.title}>
               <input
@@ -223,7 +223,7 @@ export default function PostOpportunity() {
 
           {/* ── Description ───────────────────────────── */}
           <div className="card p-6">
-            <h2 className="font-semibold text-navy border-b border-slate-100 pb-3 mb-4">Description</h2>
+            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-4">Description</h2>
             <FieldWrapper label="Role description" required error={errors.description}>
               <textarea
                 {...register('description')}
@@ -236,7 +236,7 @@ export default function PostOpportunity() {
 
           {/* ── Disciplines (required) ─────────────────── */}
           <div className="card p-6">
-            <h2 className="font-semibold text-navy border-b border-slate-100 pb-3 mb-1">
+            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-1">
               Target disciplines <span className="text-danger">*</span>
             </h2>
             <p className="text-xs text-slate-400 mb-4">Select the academic disciplines this role is suited for.</p>
@@ -295,7 +295,7 @@ export default function PostOpportunity() {
 
           {/* ── Required skills (required) ─────────────── */}
           <div className="card p-6">
-            <h2 className="font-semibold text-navy border-b border-slate-100 pb-3 mb-4">
+            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-4">
               Required skills <span className="text-danger">*</span>
             </h2>
 
@@ -331,7 +331,7 @@ export default function PostOpportunity() {
 
           {/* ── Publishing ─────────────────────────────── */}
           <div className="card p-5">
-            <h2 className="font-semibold text-navy mb-3">Publishing</h2>
+            <h2 className="font-semibold text-blue mb-3">Publishing</h2>
             <div className="flex gap-5">
               {[
                 { val: 'published', label: '🟢 Publish now',    desc: 'Visible to all students immediately' },

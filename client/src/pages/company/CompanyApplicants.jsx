@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Search, Filter, X, ExternalLink, ChevronDown } from 'lucide-react'
-import { companyAPI, filesAPI } from '@/api/client'
+import { companyAPI, filesAPI } from '@/api/company'
 import useAuthStore from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -16,7 +16,7 @@ const STATUS_CFG = {
 
 const AVATAR_COLORS = [
   'bg-blue-DEFAULT','bg-success','bg-purple-500','bg-info',
-  'bg-warning','bg-danger','bg-navy',
+  'bg-warning','bg-danger','bg-blue',
 ]
 
 function avatarColor(name = '') {
@@ -109,7 +109,7 @@ export default function CompanyApplicants() {
     <div className="p-6 lg:p-8 max-w-screen-xl">
 
       <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
-        <h1 className="font-serif text-2xl font-bold text-navy">Applicants</h1>
+        <h1 className="font-serif text-2xl font-bold text-blue">Applicants</h1>
         <p className="text-slate-500 text-sm mt-1">
           {isLoading ? 'Loading...' : `${pagination?.total ?? allApps.length} total applicant${(pagination?.total ?? allApps.length) !== 1 ? 's' : ''}`}
         </p>
@@ -122,7 +122,7 @@ export default function CompanyApplicants() {
             className={clsx('card p-4 text-left hover:shadow-card-hover transition-all',
               status === key && 'ring-2 ring-blue-DEFAULT'
             )}>
-            <div className="font-serif text-2xl font-bold text-navy mb-0.5">{statusCounts[key] ?? 0}</div>
+            <div className="font-serif text-2xl font-bold text-blue mb-0.5">{statusCounts[key] ?? 0}</div>
             <span className={cfg.cls}>{cfg.label}</span>
           </button>
         ))}
@@ -211,7 +211,7 @@ export default function CompanyApplicants() {
                             {name[0]?.toUpperCase()}
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-navy">{name}</p>
+                            <p className="text-sm font-semibold text-blue">{name}</p>
                             <p className="text-xs text-slate-400 truncate max-w-[160px]">
                               {university}{course ? ` · ${course}` : ''}
                             </p>

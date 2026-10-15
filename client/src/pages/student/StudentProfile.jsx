@@ -5,12 +5,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { Upload, X, CheckCircle, Plus } from 'lucide-react'
-import { studentAPI } from '@/api/client'
+import { supabase } from '@/lib/supabase'
+import { studentAPI } from '@/api/opportunities'
 import useAuthStore from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
-// Matches backend updateProfileSchema exactly
 const schema = z.object({
   name:                z.string().min(2, 'Name is required').max(100),
   phone:               z.string().max(20).optional().or(z.literal('')),
@@ -46,18 +46,40 @@ function Field({ label, error, required, children }) {
   )
 }
 
+async function fetchProfile(id) {
+  const { data, error } = await supabase
+    .from('student_profiles')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+async function saveProfile(id, body) {
+  const { data, error } = await supabase
+    .from('student_profiles')
+    .update(body)
+    .eq('id', id)
+    .select('id')
+  if (error) throw new Error(error.message)
+  if (!data?.length) throw new Error('Profile not found or not allowed to update it')
+}
+
 export default function StudentProfile() {
-  const { user }  = useAuthStore()
-  const qc        = useQueryClient()
-  const fileRef   = useRef()
-  const [skills,      setSkills]     = useState([])
-  const [skillInput,  setSkillInput] = useState([])
+  const { user } = useAuthStore()
+  const qc = useQueryClient()
+  const fileRef = useRef()
+  const [skills, setSkills] = useState([])
+  const [skillInput, setSkillInput] = useState('')
   const [cvUploading, setCvUploading] = useState(false)
 
+  const profileKey = ['student-profile', user?.id]
+
   const { data: profile, isLoading } = useQuery({
-    queryKey: ['student-profile', user?.id],
-    queryFn:  () => studentAPI.getProfile(user.id).then(r => r.data),
-    enabled:  !!user?.id,
+    queryKey: profileKey,
+    queryFn: () => fetchProfile(user.id),
+    enabled: !!user?.id,
   })
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
@@ -69,57 +91,52 @@ export default function StudentProfile() {
     },
   })
 
-  // Populate form and skills once profile loads
   useEffect(() => {
     if (!profile) return
     reset({
-      name:                profile.name                || user?.name || '',
-      phone:               profile.phone               || '',
-      city:                profile.city                || '',
-      university:          profile.university          || '',
-      course:              profile.course              || '',
-      year_of_study:       profile.year_of_study       || '',
-      expected_graduation: profile.expected_graduation
-        ? profile.expected_graduation.split('T')[0]   // format for date input
-        : '',
-      discipline:          profile.discipline          || '',
-      availability:        profile.availability        || '',
-      about:               profile.about               || '',
+      name:                profile.name || user?.name || '',
+      phone:               profile.phone || '',
+      city:                profile.city || '',
+      university:          profile.university || '',
+      course:              profile.course || '',
+      year_of_study:       profile.year_of_study || '',
+      expected_graduation: profile.expected_graduation || '',
+      discipline:          profile.discipline || '',
+      availability:        profile.availability || '',
+      about:               profile.about || '',
     })
-    if (profile.skills?.length) setSkills(profile.skills)
+    if (Array.isArray(profile.skills)) setSkills(profile.skills)
   }, [profile, reset, user?.name])
 
   const updateMutation = useMutation({
-    mutationFn: (body) => studentAPI.updateProfile(user.id, body),
-    onSuccess:  () => {
+    mutationFn: (body) => saveProfile(user.id, body),
+    onSuccess: () => {
       toast.success('Profile updated!')
-      qc.invalidateQueries(['student-profile', user?.id])
+      qc.invalidateQueries({ queryKey: profileKey })
     },
     onError: (e) => toast.error(e?.message || 'Update failed'),
   })
 
   const onSubmit = (values) => {
-    // Strip empty strings so server doesn't reject optional fields
-    const clean = Object.fromEntries(
-      Object.entries(values).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+    const body = Object.fromEntries(
+      Object.entries(values).map(([k, v]) => [k, v === '' || v === undefined ? null : v])
     )
-    updateMutation.mutate({ ...clean, skills })
+    updateMutation.mutate({ ...body, skills })
   }
 
   const addSkill = () => {
     const s = skillInput.trim()
     if (s && !skills.includes(s) && skills.length < 30) {
-      setSkills(prev => [...prev, s])
+      setSkills((prev) => [...prev, s])
       setSkillInput('')
     }
   }
 
-  const removeSkill = (s) => setSkills(skills.filter(x => x !== s))
+  const removeSkill = (s) => setSkills(skills.filter((x) => x !== s))
 
   const handleCVUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    // Server only accepts PDF
     if (file.type !== 'application/pdf') {
       toast.error('Only PDF files are accepted')
       return
@@ -132,9 +149,9 @@ export default function StudentProfile() {
     try {
       await studentAPI.uploadCV(user.id, file)
       toast.success('CV uploaded!')
-      qc.invalidateQueries(['student-profile', user?.id])
-    } catch (e) {
-      toast.error(e?.message || 'Upload failed')
+      qc.invalidateQueries({ queryKey: profileKey })
+    } catch (err) {
+      toast.error(err?.message || 'Upload failed')
     } finally {
       setCvUploading(false)
       e.target.value = ''
@@ -153,20 +170,19 @@ export default function StudentProfile() {
 
   return (
     <div className="p-6 lg:p-8 max-w-3xl">
-      <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
-        <h1 className="font-serif text-2xl font-bold text-navy">My Profile</h1>
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-7">
+        <h1 className="font-serif text-2xl font-bold text-blue">My Profile</h1>
         <p className="text-slate-500 text-sm mt-1">Keep your profile up to date to match more opportunities.</p>
       </motion.div>
 
-      {/* Profile completion */}
       <div className="card p-5 mb-6">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-navy">Profile strength</p>
-          <span className="text-sm font-bold text-blue-DEFAULT">{completion}%</span>
+          <p className="text-sm font-semibold text-blue">Profile strength</p>
+          <span className="text-sm font-bold text-blue">{completion}%</span>
         </div>
         <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-blue-400 to-blue-DEFAULT rounded-full transition-all duration-700"
+            className="h-full bg-blue rounded-full transition-all duration-700"
             style={{ width: `${completion}%` }}
           />
         </div>
@@ -178,10 +194,8 @@ export default function StudentProfile() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-
-        {/* Personal */}
         <div className="card p-6 space-y-4">
-          <h2 className="font-semibold text-navy border-b border-slate-100 pb-3">Personal information</h2>
+          <h2 className="font-semibold text-blue border-b border-slate-100 pb-3">Personal information</h2>
 
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Full name" required error={errors.name}>
@@ -200,14 +214,13 @@ export default function StudentProfile() {
             <input
               {...register('availability')}
               className="input"
-              placeholder="e.g. Available from June 2025, full-time"
+              placeholder="e.g. Available from June 2026, full time"
             />
           </Field>
         </div>
 
-        {/* Academic */}
         <div className="card p-6 space-y-4">
-          <h2 className="font-semibold text-navy border-b border-slate-100 pb-3">Academic details</h2>
+          <h2 className="font-semibold text-blue border-b border-slate-100 pb-3">Academic details</h2>
 
           <Field label="University / Institution" error={errors.university}>
             <input {...register('university')} className="input" placeholder="Technical University of Mombasa" />
@@ -220,7 +233,7 @@ export default function StudentProfile() {
             <Field label="Year of study" error={errors.year_of_study}>
               <select {...register('year_of_study')} className="input">
                 <option value="">Select year</option>
-                {YEARS.map(y => <option key={y} value={y}>Year {y}</option>)}
+                {YEARS.map((y) => <option key={y} value={y}>Year {y}</option>)}
                 <option value="7">Postgraduate</option>
                 <option value="8">Recent Graduate</option>
               </select>
@@ -231,22 +244,17 @@ export default function StudentProfile() {
             <Field label="Discipline / Field" error={errors.discipline}>
               <select {...register('discipline')} className="input">
                 <option value="">Select discipline</option>
-                {DISCIPLINES.map(d => <option key={d} value={d}>{d}</option>)}
+                {DISCIPLINES.map((d) => <option key={d} value={d}>{d}</option>)}
               </select>
             </Field>
             <Field label="Expected graduation" error={errors.expected_graduation}>
-              <input
-                {...register('expected_graduation')}
-                type="date"
-                className="input"
-              />
+              <input {...register('expected_graduation')} type="date" className="input" />
             </Field>
           </div>
         </div>
 
-        {/* About */}
         <div className="card p-6">
-          <h2 className="font-semibold text-navy border-b border-slate-100 pb-3 mb-4">About me</h2>
+          <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-4">About me</h2>
           <Field label="Bio" error={errors.about}>
             <textarea
               {...register('about')}
@@ -257,9 +265,8 @@ export default function StudentProfile() {
           </Field>
         </div>
 
-        {/* Skills */}
         <div className="card p-6">
-          <h2 className="font-semibold text-navy border-b border-slate-100 pb-3 mb-4">Skills</h2>
+          <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-4">Skills</h2>
           <div className="flex flex-wrap gap-2 mb-4">
             {skills.map((s) => (
               <span key={s} className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
@@ -273,8 +280,8 @@ export default function StudentProfile() {
           <div className="flex gap-2">
             <input
               value={skillInput}
-              onChange={e => setSkillInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSkill() } }}
+              onChange={(e) => setSkillInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSkill() } }}
               className="input flex-1"
               placeholder="Type a skill and press Enter (e.g. Python, React)"
             />
@@ -297,21 +304,21 @@ export default function StudentProfile() {
         </button>
       </form>
 
-      {/* CV Upload — separate from the form, PDF only */}
       <div className="card p-6 mt-5">
-        <h2 className="font-semibold text-navy border-b border-slate-100 pb-3 mb-4">
+        <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-4">
           Curriculum Vitae (CV)
         </h2>
         {profile?.cv_path ? (
           <div className="flex items-center gap-3 bg-success-light border border-success/20 rounded-xl px-4 py-3.5">
             <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-success-dark">CV uploaded ✓</p>
+              <p className="text-sm font-semibold text-success-dark">CV uploaded</p>
               <p className="text-xs text-success-dark/70 mt-0.5">
                 Automatically attached to all your applications.
               </p>
             </div>
             <button
+              type="button"
               onClick={() => fileRef.current?.click()}
               className="btn-secondary btn-sm text-xs"
             >Replace</button>
@@ -319,10 +326,10 @@ export default function StudentProfile() {
         ) : (
           <div
             onClick={() => fileRef.current?.click()}
-            className="border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center cursor-pointer hover:border-blue-DEFAULT hover:bg-blue-50/30 transition-all group"
+            className="border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center cursor-pointer hover:border-blue hover:bg-blue-50/30 transition-all group"
           >
-            <Upload className="w-8 h-8 text-slate-300 group-hover:text-blue-DEFAULT mx-auto mb-3 transition-colors" />
-            <p className="text-sm font-semibold text-slate-600 group-hover:text-blue-DEFAULT">
+            <Upload className="w-8 h-8 text-slate-300 group-hover:text-blue mx-auto mb-3 transition-colors" />
+            <p className="text-sm font-semibold text-slate-600 group-hover:text-blue">
               Click to upload your CV
             </p>
             <p className="text-xs text-slate-400 mt-1">PDF only · Max 5MB</p>
@@ -336,8 +343,8 @@ export default function StudentProfile() {
           onChange={handleCVUpload}
         />
         {cvUploading && (
-          <div className="flex items-center gap-2 mt-3 text-sm text-blue-DEFAULT">
-            <span className="w-4 h-4 border-2 border-blue-DEFAULT/30 border-t-blue-DEFAULT rounded-full animate-spin" />
+          <div className="flex items-center gap-2 mt-3 text-sm text-blue">
+            <span className="w-4 h-4 border-2 border-blue/30 border-t-blue rounded-full animate-spin" />
             Uploading...
           </div>
         )}

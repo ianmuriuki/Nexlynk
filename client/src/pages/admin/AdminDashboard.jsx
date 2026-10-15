@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { BarChart3, Users, Building2, FileText, CheckCircle, AlertTriangle, Clock } from 'lucide-react'
+import { BarChart3, Users, Building2, FileText, CheckCircle, AlertTriangle, Clock, Zap, CircleCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { adminAPI } from '@/api/client'
+import { adminAPI } from '@/api/admin'
 import ApplicationsChart from '@/components/shared/ApplicationsChart'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -14,11 +14,11 @@ const STATUS_STYLES = {
   rejected:    'badge-rejected',
 }
 
-function StatCard({ icon: Icon, label, value, accent, alert, loading }) {
+function StatCard({ icon: Icon, label, value, alert, loading }) {
   return (
-    <div className={clsx('card p-5', alert && 'border-warning/40')}>
+    <div className={clsx('stat-card', alert && 'border-warning/40')}>
       <div className="flex items-start justify-between mb-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${accent}`}>
+        <div className="stat-icon">
           <Icon className="w-5 h-5" />
         </div>
         {alert && (
@@ -29,7 +29,7 @@ function StatCard({ icon: Icon, label, value, accent, alert, loading }) {
       </div>
       {loading
         ? <div className="h-8 w-16 bg-slate-100 rounded animate-pulse mb-1" />
-        : <div className="font-serif text-3xl font-bold text-navy">
+        : <div className="font-serif text-3xl font-bold text-blue">
             {typeof value === 'number' ? value.toLocaleString() : (value ?? '—')}
           </div>
       }
@@ -59,7 +59,7 @@ export default function AdminDashboard() {
   const approveMutation = useMutation({
     mutationFn: (id) => adminAPI.approveCompany(id),
     onSuccess:  () => {
-      toast.success('Company approved ✓')
+      toast.success('Company approved')
       qc.invalidateQueries(['admin-companies-pending'])
       qc.invalidateQueries(['admin-dashboard'])
     },
@@ -86,7 +86,6 @@ export default function AdminDashboard() {
     onError: (e) => toast.error(e?.message || 'Failed'),
   })
 
-  // stats is now flat: { students, companies, applications, placements, pending_applications, ... }
   const companies    = Array.isArray(companiesData) ? companiesData : []
   const apps         = Array.isArray(appsData) ? appsData : []
   const pendingCount = stats?.pending_companies ?? companies.length
@@ -94,23 +93,27 @@ export default function AdminDashboard() {
   const now     = new Date()
   const dateStr = now.toLocaleDateString('en-KE', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
 
-
   return (
     <div className="p-6 lg:p-8 max-w-screen-xl">
 
       <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
-        <h1 className="font-serif text-2xl font-bold text-navy">Platform Dashboard</h1>
-        <p className="text-slate-500 text-sm mt-1">{dateStr} · All systems operational 🟢</p>
+        <h1 className="font-serif text-2xl font-bold text-blue">Platform Dashboard</h1>
+        <p className="text-slate-500 text-sm mt-1 flex items-center gap-1.5">
+          {dateStr}
+          <span className="inline-flex items-center gap-1 text-success">
+            <CircleCheck className="w-3.5 h-3.5" /> All systems operational
+          </span>
+        </p>
       </motion.div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-7">
-        <StatCard icon={Users}       label="Students"      value={stats?.students}      accent="bg-blue-50 text-blue-DEFAULT"  loading={dashLoading} />
-        <StatCard icon={Building2}   label="Companies"     value={stats?.companies}     accent="bg-purple-50 text-purple-600"  loading={dashLoading}
+        <StatCard icon={Users}       label="Students"      value={stats?.students}      loading={dashLoading} />
+        <StatCard icon={Building2}   label="Companies"     value={stats?.companies}     loading={dashLoading}
           alert={pendingCount > 0 ? `${pendingCount} pending` : undefined} />
-        <StatCard icon={FileText}    label="Opportunities" value={stats?.opportunities} accent="bg-warning-light text-warning"  loading={dashLoading} />
-        <StatCard icon={BarChart3}   label="Applications"  value={stats?.applications}  accent="bg-blue-50 text-blue-DEFAULT"  loading={dashLoading} />
-        <StatCard icon={CheckCircle} label="Placements"    value={stats?.placements}    accent="bg-success-light text-success" loading={dashLoading} />
+        <StatCard icon={FileText}    label="Opportunities" value={stats?.opportunities} loading={dashLoading} />
+        <StatCard icon={BarChart3}   label="Applications"  value={stats?.applications}  loading={dashLoading} />
+        <StatCard icon={CheckCircle} label="Placements"    value={stats?.placements}    loading={dashLoading} />
       </div>
 
       <ApplicationsChart />
@@ -122,14 +125,14 @@ export default function AdminDashboard() {
           <div className="card overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-navy flex items-center gap-2">
+                <h2 className="font-semibold text-blue flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-warning" /> Pending company approvals
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
                   {cosLoading ? 'Loading...' : `${companies.length} compan${companies.length !== 1 ? 'ies' : 'y'} awaiting review`}
                 </p>
               </div>
-              <Link to="/admin/companies" className="text-sm font-semibold text-blue-DEFAULT hover:underline">
+              <Link to="/admin/companies" className="text-sm font-semibold text-blue-700 hover:underline">
                 View all →
               </Link>
             </div>
@@ -140,7 +143,8 @@ export default function AdminDashboard() {
               </div>
             ) : companies.length === 0 ? (
               <div className="px-6 py-10 text-center">
-                <p className="text-slate-400 text-sm">No pending approvals. 🎉</p>
+                <CheckCircle className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                <p className="text-slate-400 text-sm">No pending approvals</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -160,7 +164,7 @@ export default function AdminDashboard() {
                       return (
                         <tr key={co.id} className="hover:bg-slate-50/80">
                           <td className="px-5 py-4">
-                            <p className="text-sm font-semibold text-navy">{co.name}</p>
+                            <p className="text-sm font-semibold text-blue">{co.name}</p>
                             <p className="text-xs text-slate-400">{co.email} · {co.company_size || '—'}</p>
                           </td>
                           <td className="px-5 py-4 text-sm text-slate-500">{co.industry || '—'}</td>
@@ -170,7 +174,7 @@ export default function AdminDashboard() {
                               <button onClick={() => approveMutation.mutate(co.id)}
                                 disabled={approveMutation.isPending}
                                 className="btn btn-sm bg-success-light text-success-dark hover:bg-success hover:text-white transition-all">
-                                ✓ Approve
+                                Approve
                               </button>
                               <button onClick={() => rejectMutation.mutate(co.id)}
                                 disabled={rejectMutation.isPending}
@@ -192,10 +196,10 @@ export default function AdminDashboard() {
           <div className="card overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-navy">Application management</h2>
+                <h2 className="font-semibold text-blue">Application management</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Update statuses and confirm placements</p>
               </div>
-              <Link to="/admin/applications" className="text-sm font-semibold text-blue-DEFAULT hover:underline">
+              <Link to="/admin/applications" className="text-sm font-semibold text-blue-700 hover:underline">
                 View all →
               </Link>
             </div>
@@ -220,14 +224,13 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {apps.map((a) => {
-                      // Server returns flat fields: student_name, opportunity_title, company_name
                       const studentName = a.student_name      || '—'
                       const oppTitle    = a.opportunity_title  || '—'
                       const coName      = a.company_name       || '—'
                       return (
                         <tr key={a.id} className="hover:bg-slate-50/80">
                           <td className="px-5 py-4">
-                            <p className="text-sm font-semibold text-navy">{studentName}</p>
+                            <p className="text-sm font-semibold text-blue">{studentName}</p>
                           </td>
                           <td className="px-5 py-4 text-sm text-slate-600 truncate max-w-[160px]">{oppTitle}</td>
                           <td className="px-5 py-4 text-sm text-slate-400">{coName}</td>
@@ -239,7 +242,7 @@ export default function AdminDashboard() {
                               defaultValue={a.status}
                               onChange={(e) => statusMutation.mutate({ id: a.id, status: e.target.value })}
                               disabled={statusMutation.isPending}
-                              className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 font-medium text-slate-700 outline-none focus:border-blue-DEFAULT cursor-pointer"
+                              className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 font-medium text-slate-700 outline-none focus:border-blue-700 cursor-pointer"
                             >
                               <option value="pending">Pending</option>
                               <option value="shortlisted">Shortlisted</option>
@@ -262,7 +265,7 @@ export default function AdminDashboard() {
 
           {/* Breakdown */}
           <div className="card p-5">
-            <h3 className="font-semibold text-navy mb-5">Application breakdown</h3>
+            <h3 className="font-semibold text-blue mb-5">Application breakdown</h3>
             {dashLoading ? (
               <div className="space-y-3">
                 {[...Array(4)].map((_, i) => <div key={i} className="h-8 bg-slate-100 rounded animate-pulse" />)}
@@ -271,7 +274,7 @@ export default function AdminDashboard() {
               const total = Math.max(stats?.applications || 1, 1)
               return [
                 { label:'Pending',     count: stats?.pending_applications     ?? 0, color:'bg-warning' },
-                { label:'Shortlisted', count: stats?.shortlisted_applications ?? 0, color:'bg-blue-DEFAULT' },
+                { label:'Shortlisted', count: stats?.shortlisted_applications ?? 0, color:'bg-blue-700' },
                 { label:'Placed',      count: stats?.placed_applications      ?? 0, color:'bg-success' },
                 { label:'Rejected',    count: stats?.rejected_applications    ?? 0, color:'bg-danger' },
               ].map(({ label, count, color }) => (
@@ -280,7 +283,7 @@ export default function AdminDashboard() {
                     <span className="text-sm text-slate-600 flex items-center gap-2">
                       <span className={`w-2.5 h-2.5 rounded-full ${color}`} />{label}
                     </span>
-                    <span className="text-sm font-bold text-navy">{count.toLocaleString()}</span>
+                    <span className="text-sm font-bold text-blue">{count.toLocaleString()}</span>
                   </div>
                   <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div className={`h-full ${color} rounded-full transition-all duration-700`}
@@ -293,14 +296,16 @@ export default function AdminDashboard() {
 
           {/* Quick actions */}
           <div className="card p-5">
-            <h3 className="font-semibold text-navy mb-4">⚡ Quick actions</h3>
+            <h3 className="font-semibold text-blue mb-4 flex items-center gap-2">
+              <Zap className="w-4 h-4 text-blue-700" /> Quick actions
+            </h3>
             <div className="space-y-2">
               <Link to="/admin/companies"
-                className="btn text-xs py-2.5 w-full justify-start px-4 bg-blue-50 text-blue-DEFAULT hover:bg-blue-DEFAULT hover:text-white transition-all">
+                className="btn text-xs py-2.5 w-full justify-start px-4 bg-slate-50 text-blue border border-slate-200 hover:border-blue-700 hover:text-blue-700 transition-all">
                 View all companies
               </Link>
               <Link to="/admin/applications"
-                className="btn text-xs py-2.5 w-full justify-start px-4 bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white transition-all">
+                className="btn text-xs py-2.5 w-full justify-start px-4 bg-slate-50 text-blue border border-slate-200 hover:border-blue-700 hover:text-blue-700 transition-all">
                 View all applications
               </Link>
             </div>
@@ -310,14 +315,16 @@ export default function AdminDashboard() {
           {stats?.recent_applications?.length > 0 && (
             <div className="card overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100">
-                <h3 className="font-semibold text-navy text-sm flex items-center gap-2">
+                <h3 className="font-semibold text-blue text-sm flex items-center gap-2">
                   <Clock className="w-4 h-4 text-slate-400" /> Recent applications
                 </h3>
               </div>
               <div className="divide-y divide-slate-100">
                 {stats.recent_applications.slice(0, 5).map((a) => (
                   <div key={a.id} className="px-5 py-3.5 flex items-start gap-3">
-                    <div className="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-sm flex-shrink-0">📋</div>
+                    <div className="w-7 h-7 rounded-full border border-slate-200 bg-white flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-3.5 h-3.5 text-blue-700" />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-slate-700 leading-relaxed truncate">
                         <span className="font-semibold">{a.student_name}</span> applied for {a.opportunity_title}

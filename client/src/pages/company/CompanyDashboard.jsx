@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, Briefcase, Users, CheckCircle, TrendingUp, Plus, Eye, Settings } from 'lucide-react'
 import useAuthStore from '@/store/authStore'
-import { companyAPI, filesAPI } from '@/api/client'
+import { companyAPI, filesAPI } from '@/api/company'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
@@ -22,7 +22,7 @@ function StatCard({ icon: Icon, label, value, accent, sub, loading }) {
       </div>
       {loading
         ? <div className="h-8 w-12 bg-slate-100 rounded animate-pulse mb-1" />
-        : <div className="font-serif text-3xl font-bold text-navy">{value ?? '—'}</div>
+        : <div className="font-serif text-3xl font-bold text-blue">{value ?? '—'}</div>
       }
       <div className="text-sm text-slate-500 mt-1">{label}</div>
     </div>
@@ -99,7 +99,7 @@ export default function CompanyDashboard() {
         className="flex items-start justify-between mb-7"
       >
         <div>
-          <h1 className="font-serif text-2xl font-bold text-navy">{companyName}</h1>
+          <h1 className="font-serif text-2xl font-bold text-blue">{companyName}</h1>
           <p className="text-slate-500 text-sm mt-1">
             {profile?.industry || 'Company'}
             {profile?.company_size ? ` · ${profile.company_size} employees` : ''}
@@ -140,7 +140,7 @@ export default function CompanyDashboard() {
           <div className="card overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-navy">Posted opportunities</h2>
+                <h2 className="font-semibold text-blue">Posted opportunities</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Manage your listings</p>
               </div>
               <Link to="/company/post" className="text-sm font-semibold text-blue-DEFAULT flex items-center gap-1">
@@ -174,7 +174,7 @@ export default function CompanyDashboard() {
                       return (
                         <tr key={opp.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="px-5 py-4">
-                            <p className="text-sm font-semibold text-navy">{opp.title}</p>
+                            <p className="text-sm font-semibold text-blue">{opp.title}</p>
                             <p className="text-xs text-slate-400 mt-0.5">
                               {opp.location || 'No location'} · {opp.positions || 1} position{(opp.positions || 1) > 1 ? 's' : ''}
                             </p>
@@ -185,7 +185,7 @@ export default function CompanyDashboard() {
                           <td className="px-5 py-4">
                             <span className={OPP_STATUS[opp.status] || 'badge-draft'}>{opp.status}</span>
                           </td>
-                          <td className="px-5 py-4 text-sm font-semibold text-navy">{Number(opp.application_count) || 0}</td>
+                          <td className="px-5 py-4 text-sm font-semibold text-blue">{Number(opp.application_count) || 0}</td>
                           <td className="px-5 py-4 text-sm text-slate-400 whitespace-nowrap">{deadline}</td>
                           <td className="px-5 py-4">
                             <button className="btn btn-sm bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center gap-1">
@@ -205,7 +205,7 @@ export default function CompanyDashboard() {
           <div className="card overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-navy">Recent applicants</h2>
+                <h2 className="font-semibold text-blue">Recent applicants</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Review and manage your pipeline</p>
               </div>
               <Link to="/company/applicants" className="text-sm font-semibold text-blue-DEFAULT flex items-center gap-1 hover:gap-2 transition-all">
@@ -230,7 +230,7 @@ export default function CompanyDashboard() {
                     {initial}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-navy">{name}</p>
+                    <p className="text-sm font-semibold text-blue">{name}</p>
                     {oppTitle && <p className="text-xs text-slate-400 mt-0.5 truncate">Applied for {oppTitle}</p>}
                     {skills.length > 0 && (
                       <div className="flex gap-1.5 mt-1.5 flex-wrap">
@@ -273,11 +273,11 @@ export default function CompanyDashboard() {
         <div className="space-y-5">
           <div className="card p-5">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-navy rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0">
+              <div className="w-12 h-12 bg-blue rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0">
                 {initials}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-navy truncate">{companyName}</p>
+                <p className="font-bold text-blue truncate">{companyName}</p>
                 <p className="text-xs text-slate-400 capitalize truncate">
                   {profile?.industry || '—'} · {profile?.company_size || '—'}
                 </p>
@@ -294,7 +294,7 @@ export default function CompanyDashboard() {
                 [shortlisted,     'Shortlisted'],
               ].map(([n, l]) => (
                 <div key={l} className="bg-slate-50 rounded-xl px-3.5 py-2.5 border border-slate-100">
-                  <div className="font-serif text-xl font-bold text-navy">{n}</div>
+                  <div className="font-serif text-xl font-bold text-blue">{n}</div>
                   <div className="text-[11px] text-slate-400 mt-0.5">{l}</div>
                 </div>
               ))}
@@ -318,7 +318,7 @@ export default function CompanyDashboard() {
             <p className="text-blue-200 text-xs leading-relaxed mb-4">
               Post a new internship, part-time or contract role and start receiving applications today.
             </p>
-            <Link to="/company/post" className="btn bg-white text-navy hover:bg-slate-100 text-xs py-2 w-full justify-center">
+            <Link to="/company/post" className="btn bg-white text-blue hover:bg-slate-100 text-xs py-2 w-full justify-center">
               Post new opportunity <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

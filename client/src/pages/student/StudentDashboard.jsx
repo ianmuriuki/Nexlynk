@@ -2,24 +2,24 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Briefcase, CheckCircle, Search, Clock, Upload } from 'lucide-react'
+import Icon from '@/components/Icon'
 import useAuthStore from '@/store/authStore'
-import { studentAPI, opportunityAPI } from '@/api/client'
+import { studentAPI, opportunityAPI } from '@/api/opportunities'
 import ApplyModal from '@/components/shared/ApplyModal'
 import clsx from 'clsx'
 
 const STATUS_MAP = {
   pending:     { cls: 'badge-pending',     label: 'Pending' },
-  shortlisted: { cls: 'badge-shortlisted', label: 'Shortlisted 🎉' },
-  placed:      { cls: 'badge-placed',      label: 'Placed ✓' },
+  shortlisted: { cls: 'badge-shortlisted', label: 'Shortlisted' },
+  placed:      { cls: 'badge-placed',      label: 'Placed' },
   rejected:    { cls: 'badge-rejected',    label: 'Rejected' },
 }
 
 const TYPE_ICON = {
-  internship:  '💼',
-  'part-time': '⏰',
-  contract:    '📝',
-  'full-time': '🎯',
+  internship:  'briefcase',
+  'part-time': 'clock',
+  contract:    'file',
+  'full-time': 'target',
 }
 
 const TYPE_BADGE = {
@@ -29,17 +29,17 @@ const TYPE_BADGE = {
   'full-time': 'bg-success-light text-success-dark',
 }
 
-function StatCard({ icon: Icon, label, value, accent, loading }) {
+function StatCard({ icon: iconName, label, value, accent, loading }) {
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between mb-3">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${accent}`}>
-          <Icon className="w-5 h-5" />
+          <Icon name={iconName} size={20} />
         </div>
       </div>
       {loading
         ? <div className="h-8 w-12 bg-slate-100 rounded animate-pulse mb-1" />
-        : <div className="font-serif text-3xl font-bold text-navy">{value ?? '—'}</div>
+        : <div className="font-serif text-3xl font-bold text-blue">{value ?? '—'}</div>
       }
       <div className="text-sm text-slate-500 mt-1">{label}</div>
     </div>
@@ -93,8 +93,8 @@ export default function StudentDashboard() {
 
       {/* Header */}
       <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
-        <h1 className="font-serif text-2xl font-bold text-navy">
-          Good {getTimeOfDay()}, {firstName} 👋
+        <h1 className="font-serif text-2xl font-bold text-blue">
+          Good {getTimeOfDay()}, {firstName}
         </h1>
         <p className="text-slate-500 text-sm mt-1">
           {pendingCount > 0
@@ -106,7 +106,7 @@ export default function StudentDashboard() {
       {/* Profile completion banner */}
       {!profileLoading && completion < 100 && (
         <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:.1 }}
-          className="bg-navy rounded-2xl px-6 py-5 flex items-center justify-between gap-6 mb-7"
+          className="bg-blue rounded-2xl px-6 py-5 flex items-center justify-between gap-6 mb-7"
         >
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2.5">
@@ -119,17 +119,17 @@ export default function StudentDashboard() {
             </div>
           </div>
           <Link to="/student/profile" className="btn-primary whitespace-nowrap text-xs">
-            Complete profile <ArrowRight className="w-3.5 h-3.5" />
+            Complete profile <Icon name="arrow-right" size={14} />
           </Link>
         </motion.div>
       )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
-        <StatCard icon={Briefcase}   label="Active applications" value={pendingCount}        accent="bg-blue-50 text-blue-DEFAULT"   loading={appsLoading} />
-        <StatCard icon={CheckCircle} label="Shortlisted"         value={shortlistedCount}    accent="bg-success-light text-success"   loading={appsLoading} />
-        <StatCard icon={Search}      label="Open opportunities"  value={totalOpps}           accent="bg-slate-100 text-slate-500"     loading={oppsLoading} />
-        <StatCard icon={Clock}       label="Total applications"  value={applications.length} accent="bg-warning-light text-warning"   loading={appsLoading} />
+        <StatCard icon="briefcase"    label="Active applications" value={pendingCount}        accent="bg-blue-50 text-blue-DEFAULT"   loading={appsLoading} />
+        <StatCard icon="check-circle" label="Shortlisted"         value={shortlistedCount}    accent="bg-success-light text-success"   loading={appsLoading} />
+        <StatCard icon="search"       label="Open opportunities"  value={totalOpps}           accent="bg-slate-100 text-slate-500"     loading={oppsLoading} />
+        <StatCard icon="clock"        label="Total applications"  value={applications.length} accent="bg-warning-light text-warning"   loading={appsLoading} />
       </div>
 
       <div className="grid xl:grid-cols-[1fr_300px] gap-6">
@@ -139,11 +139,11 @@ export default function StudentDashboard() {
           <div className="card overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-navy">Open opportunities</h2>
+                <h2 className="font-semibold text-blue">Open opportunities</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Click Apply to view full details before submitting</p>
               </div>
               <Link to="/student/opportunities" className="text-sm font-semibold text-blue-DEFAULT flex items-center gap-1 hover:gap-2 transition-all">
-                Browse all <ArrowRight className="w-3.5 h-3.5" />
+                Browse all <Icon name="arrow-right" size={14} />
               </Link>
             </div>
 
@@ -166,11 +166,11 @@ export default function StudentDashboard() {
                   )
                   : opps.map((opp) => (
                     <div key={opp.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50/80 transition-colors">
-                      <div className="w-11 h-11 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center text-lg flex-shrink-0">
-                        {TYPE_ICON[opp.type] || '💼'}
+                      <div className="w-11 h-11 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Icon name={TYPE_ICON[opp.type] || 'briefcase'} size={20} className="text-blue-700" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-navy truncate">{opp.title}</p>
+                        <p className="text-sm font-semibold text-blue truncate">{opp.title}</p>
                         <p className="text-xs text-slate-400 mt-0.5">
                           {opp.company_name}
                           {opp.location ? ` · ${opp.location}` : ''}
@@ -182,7 +182,7 @@ export default function StudentDashboard() {
                           {opp.type}
                         </span>
                         {appliedIds.has(opp.id)
-                          ? <span className="text-xs font-semibold text-success">Applied ✓</span>
+                          ? <span className="text-xs font-semibold text-success inline-flex items-center gap-1"><Icon name="check" size={14} /> Applied</span>
                           : (
                             <button
                               onClick={() => setSelectedOpp(opp)}
@@ -201,11 +201,11 @@ export default function StudentDashboard() {
           <div className="card overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-navy">My applications</h2>
+                <h2 className="font-semibold text-blue">My applications</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Track every application</p>
               </div>
               <Link to="/student/applications" className="text-sm font-semibold text-blue-DEFAULT flex items-center gap-1 hover:gap-2 transition-all">
-                View all <ArrowRight className="w-3.5 h-3.5" />
+                View all <Icon name="arrow-right" size={14} />
               </Link>
             </div>
             {appsLoading
@@ -229,9 +229,11 @@ export default function StudentDashboard() {
                     : ''
                   return (
                     <div key={app.id} className="px-6 py-4 flex items-center gap-4 border-b border-slate-100 last:border-0 hover:bg-slate-50/80 transition-colors">
-                      <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">🏢</div>
+                      <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">
+                        <Icon name="building" size={18} className="text-slate-500" />
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-navy truncate">{title}</p>
+                        <p className="text-sm font-semibold text-blue truncate">{title}</p>
                         <p className="text-xs text-slate-400 mt-0.5">{company}{date ? ` · Applied ${date}` : ''}</p>
                       </div>
                       <span className={s.cls}>{s.label}</span>
@@ -245,14 +247,14 @@ export default function StudentDashboard() {
         {/* Right column */}
         <div className="space-y-5">
           <div className="card overflow-hidden">
-            <div className="h-14 bg-gradient-to-r from-navy to-blue-800" />
+            <div className="h-14 bg-blue" />
             <div className="px-5 pb-5">
               <div className="-mt-6 mb-3">
                 <div className="w-12 h-12 rounded-full bg-blue-DEFAULT border-4 border-white flex items-center justify-center text-white font-bold text-lg font-serif">
                   {(profile?.name || user?.name || '?')[0]?.toUpperCase()}
                 </div>
               </div>
-              <p className="font-semibold text-navy">{profile?.name || user?.name || 'Your Name'}</p>
+              <p className="font-semibold text-blue">{profile?.name || user?.name || 'Your Name'}</p>
               <p className="text-xs text-slate-400 mb-4 truncate">
                 {profile?.university || profile?.course || user?.email || ''}
               </p>
@@ -274,23 +276,23 @@ export default function StudentDashboard() {
                 </div>
               )}
               <Link to="/student/profile" className="btn-secondary w-full text-xs py-2 justify-center">
-                ✏️ Edit profile
+                <Icon name="edit" size={14} /> Edit profile
               </Link>
             </div>
           </div>
 
           <div className="card p-5">
-            <h3 className="font-semibold text-navy text-sm mb-3 flex items-center gap-2">
-              <Upload className="w-4 h-4 text-slate-400" /> Your CV
+            <h3 className="font-semibold text-blue text-sm mb-3 flex items-center gap-2">
+              <Icon name="upload" size={16} className="text-slate-400" /> Your CV
             </h3>
             {profile?.cv_path ? (
               <div className="bg-success-light border border-success/20 rounded-xl px-4 py-3 text-sm text-success-dark font-semibold flex items-center gap-2">
-                <CheckCircle className="w-4 h-4" /> CV uploaded ✓
+                <Icon name="check-circle" size={16} /> CV uploaded
               </div>
             ) : (
               <div className="bg-warning-light border border-warning/20 rounded-xl px-4 py-3 text-xs text-warning-dark">
                 No CV uploaded yet.{' '}
-                <Link to="/student/profile" className="font-bold underline">Upload now →</Link>
+                <Link to="/student/profile" className="font-bold underline inline-flex items-center gap-1">Upload now <Icon name="arrow-right" size={14} /></Link>
               </div>
             )}
           </div>

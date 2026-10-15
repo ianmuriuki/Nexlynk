@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { motion } from 'framer-motion'
 import { Upload, CheckCircle, ArrowLeft, Building2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { companyAPI, filesAPI } from '@/api/client'
+import { companyAPI, filesAPI } from '@/api/company'
 import useAuthStore from '@/store/authStore'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -150,12 +150,12 @@ export default function CompanySettings() {
       <div className="w-full max-w-2xl">
 
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
-          <Link to="/company" className="flex items-center gap-2 text-sm text-slate-400 hover:text-navy mb-4 transition-colors w-fit">
+          <Link to="/company" className="flex items-center gap-2 text-sm text-slate-400 hover:text-blue mb-4 transition-colors w-fit">
             <ArrowLeft className="w-4 h-4" /> Back to dashboard
           </Link>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="font-serif text-2xl font-bold text-navy">Company Settings</h1>
+              <h1 className="font-serif text-2xl font-bold text-blue">Company Settings</h1>
               <p className="text-slate-500 text-sm mt-1">Keep your profile complete to build trust with applicants.</p>
             </div>
             {profile?.status === 'approved' && (
@@ -183,9 +183,9 @@ export default function CompanySettings() {
 
           {/* ── Logo ──────────────────────────────────────── */}
           <div className="card p-6">
-            <h2 className="font-semibold text-navy border-b border-slate-100 pb-3 mb-5">Company logo</h2>
+            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-5">Company logo</h2>
             <div className="flex items-center gap-5">
-              <div className="w-20 h-20 rounded-2xl bg-navy flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 overflow-hidden border-2 border-slate-200">
+              <div className="w-20 h-20 rounded-2xl bg-blue flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 overflow-hidden border-2 border-slate-200">
                 {logoUrl
                   ? <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
                   : initials
@@ -211,7 +211,7 @@ export default function CompanySettings() {
 
           {/* ── Company info ──────────────────────────────── */}
           <div className="card p-6 space-y-4">
-            <h2 className="font-semibold text-navy border-b border-slate-100 pb-3">Company information</h2>
+            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3">Company information</h2>
 
             <Field label="Company name" required error={errors.name}>
               <input
@@ -257,7 +257,7 @@ export default function CompanySettings() {
 
           {/* ── Contact person ────────────────────────────── */}
           <div className="card p-6 space-y-4">
-            <h2 className="font-semibold text-navy border-b border-slate-100 pb-3">Contact person</h2>
+            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3">Contact person</h2>
             <p className="text-xs text-slate-400 -mt-2">
               This person will be the primary point of contact for applicants and the platform.
             </p>
@@ -293,7 +293,7 @@ export default function CompanySettings() {
           {/* ── Profile completeness ─────────────────────── */}
           {profile && (
             <div className="card p-5">
-              <h2 className="font-semibold text-navy mb-4 flex items-center gap-2">
+              <h2 className="font-semibold text-blue mb-4 flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-slate-400" /> Profile completeness
               </h2>
               <div className="space-y-2.5">

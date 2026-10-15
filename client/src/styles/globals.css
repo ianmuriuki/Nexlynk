@@ -64,11 +64,11 @@
            shadow-lg hover:shadow-xl;
   }
   .btn-secondary {
-    @apply btn bg-white text-navy-800 border border-slate-200 px-5 py-2.5 text-sm
+    @apply btn bg-white text-blue border border-slate-200 px-5 py-2.5 text-sm
            hover:border-blue hover:text-blue active:scale-[.98];
   }
   .btn-ghost {
-    @apply btn text-slate-500 px-4 py-2 text-sm hover:text-navy-800 hover:bg-slate-100;
+    @apply btn text-slate-500 px-4 py-2 text-sm hover:text-blue hover:bg-slate-100;
   }
   .btn-danger {
     @apply btn bg-danger/10 text-danger px-4 py-2 text-sm hover:bg-danger hover:text-white;
@@ -130,5 +130,22 @@
   /* Gradient text */
   .gradient-text {
     @apply bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent;
+  }
+}
+/* ─── Dashboard refactor: neutral stat and tile cards ───── */
+@layer components {
+  .stat-card {
+    @apply card p-5;
+  }
+  .stat-icon {
+    @apply w-10 h-10 rounded-full border border-slate-200 bg-white
+           flex items-center justify-center text-blue-700 flex-shrink-0;
+  }
+  .tile {
+    @apply card p-4 flex items-center gap-3 hover:shadow-card-hover transition-all text-left;
+  }
+  .tile-icon {
+    @apply w-10 h-10 rounded-full border border-slate-200 bg-white
+           flex items-center justify-center text-blue-700 flex-shrink-0;
   }
 }

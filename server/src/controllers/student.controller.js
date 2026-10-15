@@ -137,6 +137,7 @@ exports.getApplications = async (req, res, next) => {
 };
 
 // ── GET /opportunities ────────────────────────────────────
+// Public: no auth required, browsable by anyone
 
 exports.listOpportunities = async (req, res, next) => {
   const { discipline, location, type, keyword } = req.query;
@@ -195,7 +196,29 @@ exports.listOpportunities = async (req, res, next) => {
   }
 };
 
+// ── GET /opportunities/:id ────────────────────────────────
+// Public: no auth required, single published opportunity
+
+exports.getOpportunity = async (req, res, next) => {
+  try {
+    const { rows } = await query(
+      `SELECT o.*, cp.name AS company_name, cp.logo_path AS company_logo, cp.industry AS company_industry
+       FROM opportunities o
+       JOIN company_profiles cp ON cp.id = o.company_id
+       WHERE o.id = $1 AND o.status = 'published'`,
+      [req.params.id]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ error: 'Not Found', message: 'Opportunity not found or no longer published' });
+    }
+    return res.json({ data: rows[0] });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ── POST /opportunities/:id/apply ─────────────────────────
+// Requires an authenticated student account
 
 exports.applyToOpportunity = async (req, res, next) => {
   const studentId = req.user.id;
@@ -231,7 +254,6 @@ exports.applyToOpportunity = async (req, res, next) => {
       [opportunityId, studentId, req.body?.cover_letter || null]
     );
 
-    // Fetch student details for emails
     const { rows: student } = await query(
       `SELECT u.email, sp.name, sp.university, sp.discipline
        FROM users u JOIN student_profiles sp ON sp.id = u.id
@@ -240,7 +262,6 @@ exports.applyToOpportunity = async (req, res, next) => {
     );
 
     if (student.length) {
-      // Email to student — application received
       await safeAdd(emailQueue, 'sendApplicationReceivedEmail', {
         studentEmail:     student[0].email,
         studentName:      student[0].name,
@@ -248,7 +269,6 @@ exports.applyToOpportunity = async (req, res, next) => {
         companyName:      opp[0].company_name,
       });
 
-      // Email to company — new application alert
       if (opp[0].company_email) {
         await safeAdd(emailQueue, 'sendNewApplicationAlertEmail', {
           companyEmail:      opp[0].company_email,
@@ -268,7 +288,10 @@ exports.applyToOpportunity = async (req, res, next) => {
     next(err);
   }
 };
+
 // ── POST /opportunities/:id/view ─────────────────────────
+// Public: no auth required
+
 exports.trackView = async (req, res, next) => {
   try {
     await query(
