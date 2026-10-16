@@ -7,7 +7,7 @@ import Icon from '@/components/Icon'
 import NexlynkLogo from '@/components/shared/NexlynkLogo'
 import useAuthStore from '@/store/authStore'
 import { studentAPI } from '@/api/opportunities'
-import { companyAPI } from '@/api/company'
+import { companyAPI, filesAPI } from '@/api/company'
 import { adminAPI } from '@/api/admin'
 
 const ROLE_LABEL = { student: 'Student', company: 'Company', admin: 'Administrator' }
@@ -124,7 +124,7 @@ function useRoleData(role, userId) {
   return { items: [], badges: {} }
 }
 
-function useProfileName(role, userId) {
+function useProfile(role, userId) {
   const { data } = useQuery({
     queryKey: role === 'student' ? ['student-profile', userId] : ['company-profile', userId],
     queryFn: () => role === 'student'
@@ -132,7 +132,18 @@ function useProfileName(role, userId) {
       : companyAPI.getProfile(userId).then(unwrap),
     enabled: !!userId && role !== 'admin',
   })
-  return data?.name || null
+  return data || null
+}
+
+function CompanyAvatar({ role, logoUrl, initials, failed, onError }) {
+  if (role === 'company' && logoUrl && !failed) {
+    return <img src={logoUrl} alt="" onError={onError} className="h-[30px] w-[30px] rounded-full object-cover" />
+  }
+  return (
+    <span className="grid h-[30px] w-[30px] place-items-center rounded-full bg-brand text-xs font-bold text-white">
+      {initials}
+    </span>
+  )
 }
 
 function SidebarItem({ item, badge, rail }) {
@@ -197,9 +208,20 @@ export default function DashboardLayout({ role }) {
   })
 
   const { items: notifItems, badges } = useRoleData(role, user?.id)
-  const profileName = useProfileName(role, user?.id)
+  const profile = useProfile(role, user?.id)
+  const [logoFailed, setLogoFailed] = useState(false)
+  const { data: companyLogoUrl } = useQuery({
+    queryKey: ['company-logo', user?.id, profile?.logo_path],
+    queryFn: () => filesAPI.logoSignedUrl(encodeURIComponent(profile.logo_path))
+      .then((r) => r.data?.url || r.data?.signedUrl),
+    enabled: role === 'company' && !!user?.id && !!profile?.logo_path,
+  })
 
-  const displayName = profileName || user?.name || user?.email || 'Account'
+  useEffect(() => {
+    setLogoFailed(false)
+  }, [companyLogoUrl])
+
+  const displayName = profile?.name || user?.name || user?.email || 'Account'
   const initials = displayName.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase() || '?'
   const navItems = NAV[role] || []
   const current = navItems
@@ -340,9 +362,7 @@ export default function DashboardLayout({ role }) {
               title={displayName}
               className="flex items-center rounded-full border border-line-2 bg-white p-[3px] transition-colors hover:bg-canvas"
             >
-              <span className="grid h-[30px] w-[30px] place-items-center rounded-full bg-brand text-xs font-bold text-white">
-                {initials}
-              </span>
+              <CompanyAvatar role={role} logoUrl={companyLogoUrl} initials={initials} onError={() => setLogoFailed(true)} failed={logoFailed} />
             </button>
 
             {accountDD.open && (

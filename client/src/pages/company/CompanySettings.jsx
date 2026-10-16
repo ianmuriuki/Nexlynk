@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion } from 'framer-motion'
-import { Upload, CheckCircle, ArrowLeft, Building2 } from 'lucide-react'
+import Icon from '@/components/Icon'
+import StatusPill from '@/components/ui/StatusPill'
 import { Link } from 'react-router-dom'
 import { companyAPI, filesAPI } from '@/api/company'
 import useAuthStore from '@/store/authStore'
@@ -37,12 +37,12 @@ const SIZES = [
 function Field({ label, required, error, hint, children }) {
   return (
     <div>
-      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+      <label className="block text-sm font-semibold text-ink-2 mb-1.5">
         {label}
         {required && <span className="text-danger ml-0.5">*</span>}
       </label>
       {children}
-      {hint && !error && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+      {hint && !error && <p className="mt-1 text-xs text-ink-4">{hint}</p>}
       {error  && <p className="mt-1 text-xs text-danger">{error.message}</p>}
     </div>
   )
@@ -56,7 +56,7 @@ export default function CompanySettings() {
   const [logoUrl, setLogoUrl] = useState(null)
 
   // ── Fetch existing profile ────────────────────────────
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isPending, isError } = useQuery({
     queryKey: ['company-profile', user?.id],
     queryFn:  () => companyAPI.getProfile(user.id).then(r => r.data.data ?? r.data),
     enabled:  !!user?.id,
@@ -103,7 +103,7 @@ export default function CompanySettings() {
     mutationFn: (body) => companyAPI.update(user.id, body),
     onSuccess:  () => {
       toast.success('Company profile updated!')
-      qc.invalidateQueries(['company-profile', user?.id])
+      qc.invalidateQueries({ queryKey: ['company-profile', user?.id] })
     },
     onError: (e) => toast.error(e?.message || 'Update failed'),
   })
@@ -126,7 +126,7 @@ export default function CompanySettings() {
     try {
       await companyAPI.uploadLogo(user.id, file)
       toast.success('Logo uploaded!')
-      qc.invalidateQueries(['company-profile', user?.id])
+      qc.invalidateQueries({ queryKey: ['company-profile', user?.id] })
       // Preview immediately
       setLogoUrl(URL.createObjectURL(file))
     } catch (e) {
@@ -139,9 +139,20 @@ export default function CompanySettings() {
   const initials = (profile?.name || user?.name || 'CO')
     .split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase()
 
-  if (isLoading) return (
-    <div className="p-8 max-w-3xl space-y-4">
-      {[...Array(6)].map((_, i) => <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse" />)}
+  if (isPending) return (
+    <div role="status" aria-label="Loading company profile" className="p-6 lg:p-8 max-w-3xl space-y-4">
+      <div className="h-8 w-56 rounded bg-canvas-2 animate-shimmer" />
+      {[...Array(6)].map((_, i) => <div key={i} className="h-12 rounded-xl bg-canvas-2 animate-shimmer" />)}
+    </div>
+  )
+
+  if (isError) return (
+    <div className="p-6 lg:p-8 flex justify-center">
+      <div className="card w-full max-w-2xl p-10 text-center">
+        <Icon name="alert-circle" size={28} className="mx-auto mb-3 text-warning" />
+        <h1 className="mb-2 text-lg font-extrabold text-ink">Could not load company profile</h1>
+        <p className="text-sm text-ink-3">Please try again shortly.</p>
+      </div>
     </div>
   )
 
@@ -149,25 +160,23 @@ export default function CompanySettings() {
     <div className="p-6 lg:p-8 flex justify-center">
       <div className="w-full max-w-2xl">
 
-        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
-          <Link to="/company" className="flex items-center gap-2 text-sm text-slate-400 hover:text-blue mb-4 transition-colors w-fit">
-            <ArrowLeft className="w-4 h-4" /> Back to dashboard
+        <div className="mb-7 animate-fade-up">
+          <Link to="/company" className="flex items-center gap-2 text-sm text-ink-4 hover:text-brand mb-4 transition-colors w-fit">
+            <Icon name="arrow-left" size={16} /> Back to dashboard
           </Link>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="font-serif text-2xl font-bold text-blue">Company Settings</h1>
-              <p className="text-slate-500 text-sm mt-1">Keep your profile complete to build trust with applicants.</p>
+              <h1 className="text-2xl font-extrabold text-ink">Company Settings</h1>
+              <p className="text-ink-3 text-sm mt-1">Keep your profile complete to build trust with applicants.</p>
             </div>
             {profile?.status === 'approved' && (
-              <span className="badge badge-approved flex items-center gap-1">
-                <CheckCircle className="w-3 h-3" /> Verified
-              </span>
+              <StatusPill status="approved" label="Verified" />
             )}
             {profile?.status === 'pending' && (
-              <span className="badge badge-pending-co">⏳ Awaiting approval</span>
+              <StatusPill status="pending" label="Awaiting approval" />
             )}
           </div>
-        </motion.div>
+        </div>
 
         {/* Awaiting approval notice */}
         {profile?.status === 'pending' && (
@@ -183,9 +192,9 @@ export default function CompanySettings() {
 
           {/* ── Logo ──────────────────────────────────────── */}
           <div className="card p-6">
-            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-5">Company logo</h2>
+            <h2 className="font-semibold text-ink border-b border-line pb-3 mb-5">Company logo</h2>
             <div className="flex items-center gap-5">
-              <div className="w-20 h-20 rounded-2xl bg-blue flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 overflow-hidden border-2 border-slate-200">
+              <div className="w-20 h-20 rounded-2xl bg-brand flex items-center justify-center text-white font-bold text-2xl flex-shrink-0 overflow-hidden border-2 border-line-2">
                 {logoUrl
                   ? <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
                   : initials
@@ -199,11 +208,11 @@ export default function CompanySettings() {
                   className="btn-secondary text-sm mb-2"
                 >
                   {logoUploading
-                    ? <span className="flex items-center gap-2"><span className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" /> Uploading...</span>
-                    : <span className="flex items-center gap-2"><Upload className="w-3.5 h-3.5" /> {logoUrl ? 'Change logo' : 'Upload logo'}</span>
+                    ? <span className="flex items-center gap-2"><span className="w-3.5 h-3.5 border-2 border-line-3 border-t-slate-600 rounded-full animate-spin" /> Uploading...</span>
+                    : <span className="flex items-center gap-2"><Icon name="upload" size={14} /> {logoUrl ? 'Change logo' : 'Upload logo'}</span>
                   }
                 </button>
-                <p className="text-xs text-slate-400">PNG, JPG or WebP · Max 2MB</p>
+                <p className="text-xs text-ink-4">PNG, JPG or WebP · Max 2MB</p>
               </div>
               <input ref={logoRef} type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
             </div>
@@ -211,7 +220,7 @@ export default function CompanySettings() {
 
           {/* ── Company info ──────────────────────────────── */}
           <div className="card p-6 space-y-4">
-            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3">Company information</h2>
+            <h2 className="font-semibold text-ink border-b border-line pb-3">Company information</h2>
 
             <Field label="Company name" required error={errors.name}>
               <input
@@ -257,8 +266,8 @@ export default function CompanySettings() {
 
           {/* ── Contact person ────────────────────────────── */}
           <div className="card p-6 space-y-4">
-            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3">Contact person</h2>
-            <p className="text-xs text-slate-400 -mt-2">
+            <h2 className="font-semibold text-ink border-b border-line pb-3">Contact person</h2>
+            <p className="text-xs text-ink-4 -mt-2">
               This person will be the primary point of contact for applicants and the platform.
             </p>
 
@@ -293,8 +302,8 @@ export default function CompanySettings() {
           {/* ── Profile completeness ─────────────────────── */}
           {profile && (
             <div className="card p-5">
-              <h2 className="font-semibold text-blue mb-4 flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-slate-400" /> Profile completeness
+              <h2 className="font-semibold text-ink mb-4 flex items-center gap-2">
+                <Icon name="building" size={16} className="text-ink-4" /> Profile completeness
               </h2>
               <div className="space-y-2.5">
                 {[
@@ -308,14 +317,14 @@ export default function CompanySettings() {
                 ].map(({ label, done }) => (
                   <div key={label} className="flex items-center gap-2.5">
                     <div className={clsx('w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0',
-                      done ? 'bg-success-light' : 'bg-slate-100'
+                      done ? 'bg-success-light' : 'bg-canvas-2'
                     )}>
                       {done
-                        ? <CheckCircle className="w-3 h-3 text-success" />
+                        ? <Icon name="check-circle" size={12} className="text-success" />
                         : <span className="w-1.5 h-1.5 bg-slate-300 rounded-full" />
                       }
                     </div>
-                    <span className={clsx('text-sm', done ? 'text-slate-600' : 'text-slate-400')}>{label}</span>
+                    <span className={clsx('text-sm', done ? 'text-ink-2' : 'text-ink-4')}>{label}</span>
                   </div>
                 ))}
               </div>
@@ -324,13 +333,13 @@ export default function CompanySettings() {
 
           {/* ── Actions ──────────────────────────────────── */}
           <div className="flex gap-3 pb-8">
-            <Link to="/company" className="btn-secondary flex-1 py-3 text-center">
+            <Link to="/company" className="btn btn-secondary flex-1 text-center">
               Cancel
             </Link>
             <button
               type="submit"
               disabled={updateMutation.isPending}
-              className="btn-primary flex-[2] py-3"
+              className="btn btn-primary flex-[2]"
             >
               {updateMutation.isPending
                 ? (

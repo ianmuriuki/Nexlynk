@@ -71,7 +71,11 @@ export const companyAPI = {
 
 export const filesAPI = {
   async cvSignedUrl(encodedPath) {
-    const { data, error } = await supabase.storage.from('cvs').createSignedUrl(decodeURIComponent(encodedPath), 300)
+    let objectPath = decodeURIComponent(encodedPath)
+    while (objectPath.startsWith('/')) objectPath = objectPath.slice(1)
+    if (objectPath.startsWith('cvs/')) objectPath = objectPath.slice(4)
+
+    const { data, error } = await supabase.storage.from('cvs').createSignedUrl(objectPath, 300)
     if (error) fail(error)
     return { data: { url: data.signedUrl } }
   },

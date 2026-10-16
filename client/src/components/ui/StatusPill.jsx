@@ -5,6 +5,9 @@ const STATUS_CLASSES = {
   placed: 'badge-placed',
   rejected: 'badge-rejected',
   approved: 'badge-approved',
+  draft: 'badge-draft',
+  published: 'badge-published',
+  closed: 'badge-rejected',
 }
 
 const STATUS_LABELS = {
@@ -14,6 +17,9 @@ const STATUS_LABELS = {
   placed: 'Placed',
   rejected: 'Rejected',
   approved: 'Approved',
+  draft: 'Draft',
+  published: 'Published',
+  closed: 'Closed',
 }
 
 export default function StatusPill({ status, label }) {

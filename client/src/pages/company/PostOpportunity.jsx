@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion } from 'framer-motion'
-import { Plus, X, ArrowLeft } from 'lucide-react'
+import Icon from '@/components/Icon'
 import { companyAPI } from '@/api/company'
 import useAuthStore from '@/store/authStore'
 import toast from 'react-hot-toast'
@@ -49,7 +48,7 @@ const DISCIPLINE_OPTIONS = [
 function FieldWrapper({ label, required, error, children }) {
   return (
     <div>
-      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+      <label className="block text-sm font-semibold text-ink-2 mb-1.5">
         {label}
         {required && <span className="text-danger ml-0.5">*</span>}
       </label>
@@ -137,22 +136,22 @@ export default function PostOpportunity() {
     <div className="p-6 lg:p-8 flex justify-center">
       <div className="w-full max-w-2xl">
 
-        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
+        <div className="mb-7 animate-fade-up">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-sm text-slate-400 hover:text-blue mb-4 transition-colors"
+            className="flex items-center gap-2 text-sm text-ink-4 hover:text-ink mb-4 transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Back
+            <Icon name="arrow-left" size={16} /> Back
           </button>
-          <h1 className="font-serif text-2xl font-bold text-blue">Post an Opportunity</h1>
-          <p className="text-slate-500 text-sm mt-1">Fill in the details to attract qualified applicants.</p>
-        </motion.div>
+          <h1 className="text-2xl font-extrabold text-ink">Post an Opportunity</h1>
+          <p className="text-ink-3 text-sm mt-1">Fill in the details to attract qualified applicants.</p>
+        </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
 
           {/* ── Basic details ─────────────────────────── */}
           <div className="card p-6 space-y-4">
-            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3">Opportunity details</h2>
+            <h2 className="font-semibold text-ink border-b border-line pb-3">Opportunity details</h2>
 
             <FieldWrapper label="Job title" required error={errors.title}>
               <input
@@ -223,7 +222,7 @@ export default function PostOpportunity() {
 
           {/* ── Description ───────────────────────────── */}
           <div className="card p-6">
-            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-4">Description</h2>
+            <h2 className="font-semibold text-ink border-b border-line pb-3 mb-4">Description</h2>
             <FieldWrapper label="Role description" required error={errors.description}>
               <textarea
                 {...register('description')}
@@ -236,10 +235,10 @@ export default function PostOpportunity() {
 
           {/* ── Disciplines (required) ─────────────────── */}
           <div className="card p-6">
-            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-1">
+            <h2 className="font-semibold text-ink border-b border-line pb-3 mb-1">
               Target disciplines <span className="text-danger">*</span>
             </h2>
-            <p className="text-xs text-slate-400 mb-4">Select the academic disciplines this role is suited for.</p>
+            <p className="text-xs text-ink-4 mb-4">Select the academic disciplines this role is suited for.</p>
 
             {/* Quick-select chips */}
             <div className="flex flex-wrap gap-2 mb-4">
@@ -252,8 +251,8 @@ export default function PostOpportunity() {
                     className={clsx(
                       'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
                       selected
-                        ? 'bg-blue-DEFAULT text-white border-blue-DEFAULT'
-                        : 'bg-white text-slate-500 border-slate-200 hover:border-blue-DEFAULT hover:text-blue-DEFAULT'
+                        ? 'bg-brand text-white border-brand'
+                        : 'bg-white text-ink-3 border-line-2 hover:border-brand hover:text-brand'
                     )}
                   >{d}</button>
                 )
@@ -270,7 +269,7 @@ export default function PostOpportunity() {
                 placeholder="Or type a custom discipline..."
               />
               <button type="button" onClick={() => addDisc()} className="btn-secondary px-4">
-                <Plus className="w-4 h-4" />
+                <Icon name="plus" size={16} />
               </button>
             </div>
 
@@ -279,13 +278,13 @@ export default function PostOpportunity() {
             )}
 
             {disciplines.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
-                <span className="text-xs text-slate-400 self-center">Selected:</span>
+              <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-line">
+                <span className="text-xs text-ink-4 self-center">Selected:</span>
                 {disciplines.map(d => (
-                  <span key={d} className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
+                  <span key={d} className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 bg-brand-soft text-brand-ink rounded-full border border-brand-soft">
                     {d}
-                    <button type="button" onClick={() => removeDisc(d)} className="text-blue-400 hover:text-danger">
-                      <X className="w-3 h-3" />
+                    <button type="button" onClick={() => removeDisc(d)} className="text-brand-strong hover:text-danger">
+                      <Icon name="x" size={12} />
                     </button>
                   </span>
                 ))}
@@ -295,16 +294,16 @@ export default function PostOpportunity() {
 
           {/* ── Required skills (required) ─────────────── */}
           <div className="card p-6">
-            <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-4">
+            <h2 className="font-semibold text-ink border-b border-line pb-3 mb-4">
               Required skills <span className="text-danger">*</span>
             </h2>
 
             <div className="flex flex-wrap gap-2 mb-4">
               {skills.map(s => (
-                <span key={s} className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
+                <span key={s} className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 bg-brand-soft text-brand-ink rounded-full border border-brand-soft">
                   {s}
-                  <button type="button" onClick={() => removeSkill(s)} className="text-blue-400 hover:text-danger">
-                    <X className="w-3 h-3" />
+                  <button type="button" onClick={() => removeSkill(s)} className="text-brand-strong hover:text-danger">
+                    <Icon name="x" size={12} />
                   </button>
                 </span>
               ))}
@@ -319,29 +318,29 @@ export default function PostOpportunity() {
                 placeholder="e.g. Python, React, Excel — press Enter to add"
               />
               <button type="button" onClick={addSkill} className="btn-secondary px-4">
-                <Plus className="w-4 h-4" />
+                <Icon name="plus" size={16} />
               </button>
             </div>
 
             {arrayErrors.skills && (
               <p className="mt-2 text-xs text-danger">{arrayErrors.skills}</p>
             )}
-            <p className="text-xs text-slate-400 mt-2">{skills.length}/15 skills added</p>
+            <p className="text-xs text-ink-4 mt-2">{skills.length}/15 skills added</p>
           </div>
 
           {/* ── Publishing ─────────────────────────────── */}
           <div className="card p-5">
-            <h2 className="font-semibold text-blue mb-3">Publishing</h2>
+            <h2 className="font-semibold text-ink mb-3">Publishing</h2>
             <div className="flex gap-5">
               {[
-                { val: 'published', label: '🟢 Publish now',    desc: 'Visible to all students immediately' },
-                { val: 'draft',     label: '📝 Save as draft',  desc: 'Save and publish later' },
+                { val: 'published', label: 'Publish now',    desc: 'Visible to all students immediately' },
+                { val: 'draft',     label: 'Save as draft',  desc: 'Save and publish later' },
               ].map(({ val, label, desc }) => (
-                <label key={val} className="flex items-start gap-3 cursor-pointer flex-1 bg-slate-50 border border-slate-200 rounded-xl p-3.5 hover:border-blue-DEFAULT transition-colors has-[:checked]:border-blue-DEFAULT has-[:checked]:bg-blue-50/40">
-                  <input {...register('status')} type="radio" value={val} className="accent-blue-DEFAULT mt-0.5" />
+                <label key={val} className="flex items-start gap-3 cursor-pointer flex-1 bg-canvas border border-line-2 rounded-xl p-3.5 hover:border-brand transition-colors has-[:checked]:border-brand has-[:checked]:bg-brand-soft/40">
+                  <input {...register('status')} type="radio" value={val} className="accent-brand mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-slate-700">{label}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{desc}</p>
+                    <p className="text-sm font-semibold text-ink-2">{label}</p>
+                    <p className="text-xs text-ink-4 mt-0.5">{desc}</p>
                   </div>
                 </label>
               ))}
