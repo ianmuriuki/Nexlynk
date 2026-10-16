@@ -7,24 +7,18 @@ import useAuthStore from '@/store/authStore'
 import { studentAPI, opportunityAPI } from '@/api/opportunities'
 import ApplyModal from '@/components/shared/ApplyModal'
 import clsx from 'clsx'
-
-const STATUS_MAP = {
-  pending:     { cls: 'badge-pending',     label: 'Pending' },
-  shortlisted: { cls: 'badge-shortlisted', label: 'Shortlisted' },
-  placed:      { cls: 'badge-placed',      label: 'Placed' },
-  rejected:    { cls: 'badge-rejected',    label: 'Rejected' },
-}
+import StatusPill from '@/components/ui/StatusPill'
 
 const TYPE_ICON = {
   internship:  'briefcase',
   'part-time': 'clock',
   contract:    'file',
-  'full-time': 'target',
+  'full-time': 'briefcase',
 }
 
 const TYPE_BADGE = {
-  internship:  'bg-blue-100 text-blue-700',
-  'part-time': 'bg-purple-100 text-purple-700',
+  internship:  'bg-brand-soft text-brand-ink',
+  'part-time': 'bg-info-light text-info-dark',
   contract:    'bg-warning-light text-warning-dark',
   'full-time': 'bg-success-light text-success-dark',
 }
@@ -38,10 +32,10 @@ function StatCard({ icon: iconName, label, value, accent, loading }) {
         </div>
       </div>
       {loading
-        ? <div className="h-8 w-12 bg-slate-100 rounded animate-pulse mb-1" />
-        : <div className="font-serif text-3xl font-bold text-blue">{value ?? '—'}</div>
+        ? <div className="h-8 w-12 bg-canvas-2 rounded animate-shimmer mb-1" />
+        : <div className="tabular-nums text-3xl font-extrabold text-ink">{value ?? '—'}</div>
       }
-      <div className="text-sm text-slate-500 mt-1">{label}</div>
+      <div className="text-sm text-ink-3 mt-1">{label}</div>
     </div>
   )
 }
@@ -51,19 +45,19 @@ export default function StudentDashboard() {
   const qc       = useQueryClient()
   const [selectedOpp, setSelectedOpp] = useState(null)
 
-  const { data: profileData, isLoading: profileLoading } = useQuery({
+  const { data: profileData, isPending: profileLoading, isError: profileError } = useQuery({
     queryKey: ['student-profile', user?.id],
     queryFn:  () => studentAPI.getProfile(user.id).then(r => r.data.data ?? r.data),
     enabled:  !!user?.id,
   })
 
-  const { data: appsData, isLoading: appsLoading } = useQuery({
+  const { data: appsData, isPending: appsLoading, isError: appsError } = useQuery({
     queryKey: ['student-applications', user?.id],
     queryFn:  () => studentAPI.getApplications(user.id).then(r => r.data.data ?? r.data),
     enabled:  !!user?.id,
   })
 
-  const { data: oppsData, isLoading: oppsLoading } = useQuery({
+  const { data: oppsData, isPending: oppsLoading, isError: oppsError } = useQuery({
     queryKey: ['opportunities', { limit: 6 }],
     queryFn:  () => opportunityAPI.list({ limit: 6 }).then(r => r.data),
   })
@@ -87,16 +81,16 @@ export default function StudentDashboard() {
         <ApplyModal
           opportunity={selectedOpp}
           onClose={() => setSelectedOpp(null)}
-          onSuccess={() => qc.invalidateQueries(['student-applications', user?.id])}
+          onSuccess={() => qc.invalidateQueries({ queryKey: ['student-applications', user?.id] })}
         />
       )}
 
       {/* Header */}
       <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
-        <h1 className="font-serif text-2xl font-bold text-blue">
+        <h1 className="text-2xl font-extrabold text-ink">
           Good {getTimeOfDay()}, {firstName}
         </h1>
-        <p className="text-slate-500 text-sm mt-1">
+        <p className="text-ink-3 text-sm mt-1">
           {pendingCount > 0
             ? `You have ${pendingCount} active application${pendingCount > 1 ? 's' : ''} in progress.`
             : 'Start applying to opportunities that match your profile.'}
@@ -104,17 +98,17 @@ export default function StudentDashboard() {
       </motion.div>
 
       {/* Profile completion banner */}
-      {!profileLoading && completion < 100 && (
+      {!profileLoading && !profileError && completion < 100 && (
         <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:.1 }}
-          className="bg-blue rounded-2xl px-6 py-5 flex items-center justify-between gap-6 mb-7"
+          className="bg-brand rounded-2xl px-6 py-5 flex items-center justify-between gap-6 mb-7"
         >
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2.5">
               <p className="text-white font-semibold text-sm">Complete your profile to get more matches</p>
-              <span className="text-blue-300 text-sm font-bold">{completion}%</span>
+              <span className="text-white/80 text-sm font-bold">{completion}%</span>
             </div>
             <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-blue-400 to-blue-300 rounded-full transition-all duration-700"
+              <div className="h-full bg-gradient-to-r from-brand-strong to-brand rounded-full transition-all duration-700"
                 style={{ width: `${completion}%` }} />
             </div>
           </div>
@@ -126,10 +120,10 @@ export default function StudentDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
-        <StatCard icon="briefcase"    label="Active applications" value={pendingCount}        accent="bg-blue-50 text-blue-DEFAULT"   loading={appsLoading} />
-        <StatCard icon="check-circle" label="Shortlisted"         value={shortlistedCount}    accent="bg-success-light text-success"   loading={appsLoading} />
-        <StatCard icon="search"       label="Open opportunities"  value={totalOpps}           accent="bg-slate-100 text-slate-500"     loading={oppsLoading} />
-        <StatCard icon="clock"        label="Total applications"  value={applications.length} accent="bg-warning-light text-warning"   loading={appsLoading} />
+        <StatCard icon="briefcase"    label="Active applications" value={appsError ? 'N/A' : pendingCount}        accent="bg-brand-soft text-brand"   loading={appsLoading} />
+        <StatCard icon="check-circle" label="Shortlisted"         value={appsError ? 'N/A' : shortlistedCount}    accent="bg-success-light text-success"   loading={appsLoading} />
+        <StatCard icon="search"       label="Open opportunities"  value={oppsError ? 'N/A' : totalOpps}           accent="bg-canvas-2 text-ink-3"     loading={oppsLoading} />
+        <StatCard icon="clock"        label="Total applications"  value={appsError ? 'N/A' : applications.length} accent="bg-warning-light text-warning"   loading={appsLoading} />
       </div>
 
       <div className="grid xl:grid-cols-[1fr_300px] gap-6">
@@ -137,48 +131,55 @@ export default function StudentDashboard() {
 
           {/* Opportunities */}
           <div className="card overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-line flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-blue">Open opportunities</h2>
-                <p className="text-xs text-slate-400 mt-0.5">Click Apply to view full details before submitting</p>
+                <h2 className="font-semibold text-ink">Open opportunities</h2>
+                <p className="text-xs text-ink-4 mt-0.5">Click Apply to view full details before submitting</p>
               </div>
-              <Link to="/student/opportunities" className="text-sm font-semibold text-blue-DEFAULT flex items-center gap-1 hover:gap-2 transition-all">
+              <Link to="/student/opportunities" className="text-sm font-semibold text-brand flex items-center gap-1 hover:gap-2 transition-all">
                 Browse all <Icon name="arrow-right" size={14} />
               </Link>
             </div>
 
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-line">
               {oppsLoading
                 ? [...Array(4)].map((_, i) => (
-                  <div key={i} className="px-6 py-4 animate-pulse flex items-center gap-4">
-                    <div className="w-11 h-11 bg-slate-100 rounded-xl flex-shrink-0" />
+                  <div key={i} className="px-6 py-4 animate-shimmer flex items-center gap-4">
+                    <div className="w-11 h-11 bg-canvas-2 rounded-xl flex-shrink-0" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-3.5 bg-slate-100 rounded w-2/3" />
-                      <div className="h-3 bg-slate-100 rounded w-1/3" />
+                      <div className="h-3.5 bg-canvas-2 rounded w-2/3" />
+                      <div className="h-3 bg-canvas-2 rounded w-1/3" />
                     </div>
                   </div>
                 ))
-                : opps.length === 0
+                : oppsError
+                  ? (
+                    <div role="alert" className="px-6 py-10 text-center">
+                      <Icon name="alert-circle" size={26} className="mx-auto mb-2 text-warning" />
+                      <p className="text-sm font-semibold text-ink-2">Could not load opportunities</p>
+                    </div>
+                  )
+                  : opps.length === 0
                   ? (
                     <div className="px-6 py-12 text-center">
-                      <p className="text-slate-400 text-sm">No opportunities available right now.</p>
+                      <p className="text-ink-4 text-sm">No opportunities available right now.</p>
                     </div>
                   )
                   : opps.map((opp) => (
-                    <div key={opp.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50/80 transition-colors">
-                      <div className="w-11 h-11 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <Icon name={TYPE_ICON[opp.type] || 'briefcase'} size={20} className="text-blue-700" />
+                    <div key={opp.id} className="px-6 py-4 flex items-center gap-4 hover:bg-canvas/80 transition-colors">
+                      <div className="w-11 h-11 bg-brand-soft border border-brand-soft rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Icon name={TYPE_ICON[opp.type] || 'briefcase'} size={20} className="text-brand-ink" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-blue truncate">{opp.title}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-sm font-semibold text-ink truncate">{opp.title}</p>
+                        <p className="text-xs text-ink-4 mt-0.5">
                           {opp.company_name}
                           {opp.location ? ` · ${opp.location}` : ''}
                           {opp.stipend  ? ` · ${opp.stipend}`  : ''}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={clsx('badge text-[10px] capitalize', TYPE_BADGE[opp.type] || 'bg-slate-100 text-slate-500')}>
+                        <span className={clsx('badge text-[10px] capitalize', TYPE_BADGE[opp.type] || 'bg-canvas-2 text-ink-3')}>
                           {opp.type}
                         </span>
                         {appliedIds.has(opp.id)
@@ -199,44 +200,45 @@ export default function StudentDashboard() {
 
           {/* Applications tracker */}
           <div className="card overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-line flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-blue">My applications</h2>
-                <p className="text-xs text-slate-400 mt-0.5">Track every application</p>
+                <h2 className="font-semibold text-ink">My applications</h2>
+                <p className="text-xs text-ink-4 mt-0.5">Track every application</p>
               </div>
-              <Link to="/student/applications" className="text-sm font-semibold text-blue-DEFAULT flex items-center gap-1 hover:gap-2 transition-all">
+              <Link to="/student/applications" className="text-sm font-semibold text-brand flex items-center gap-1 hover:gap-2 transition-all">
                 View all <Icon name="arrow-right" size={14} />
               </Link>
             </div>
             {appsLoading
               ? [...Array(3)].map((_, i) => (
-                <div key={i} className="px-6 py-4 animate-pulse flex items-center gap-4 border-b border-slate-100 last:border-0">
-                  <div className="w-9 h-9 bg-slate-100 rounded-xl flex-shrink-0" />
+                <div key={i} className="px-6 py-4 animate-shimmer flex items-center gap-4 border-b border-line last:border-0">
+                  <div className="w-9 h-9 bg-canvas-2 rounded-xl flex-shrink-0" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-3.5 bg-slate-100 rounded w-1/2" />
-                    <div className="h-3 bg-slate-100 rounded w-1/3" />
+                    <div className="h-3.5 bg-canvas-2 rounded w-1/2" />
+                    <div className="h-3 bg-canvas-2 rounded w-1/3" />
                   </div>
                 </div>
               ))
-              : applications.length === 0
-                ? <div className="px-6 py-10 text-center"><p className="text-slate-400 text-sm">No applications yet.</p></div>
+              : appsError
+                ? <div role="alert" className="px-6 py-10 text-center"><Icon name="alert-circle" size={26} className="mx-auto mb-2 text-warning" /><p className="text-sm font-semibold text-ink-2">Could not load applications</p></div>
+                : applications.length === 0
+                ? <div className="px-6 py-10 text-center"><p className="text-ink-4 text-sm">No applications yet.</p></div>
                 : applications.slice(0, 5).map((app) => {
-                  const s       = STATUS_MAP[app.status] || STATUS_MAP.pending
-                  const title   = app.opportunity?.title   || 'Opportunity'
+                                    const title   = app.opportunity?.title   || 'Opportunity'
                   const company = app.opportunity?.company_name || ''
                   const date    = app.applied_at || app.created_at
                     ? new Date(app.applied_at || app.created_at).toLocaleDateString('en-KE', { day:'numeric', month:'short' })
                     : ''
                   return (
-                    <div key={app.id} className="px-6 py-4 flex items-center gap-4 border-b border-slate-100 last:border-0 hover:bg-slate-50/80 transition-colors">
-                      <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-sm flex-shrink-0">
-                        <Icon name="building" size={18} className="text-slate-500" />
+                    <div key={app.id} className="px-6 py-4 flex items-center gap-4 border-b border-line last:border-0 hover:bg-canvas/80 transition-colors">
+                      <div className="w-9 h-9 bg-canvas-2 rounded-xl flex items-center justify-center text-sm flex-shrink-0">
+                        <Icon name="building" size={18} className="text-ink-3" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-blue truncate">{title}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{company}{date ? ` · Applied ${date}` : ''}</p>
+                        <p className="text-sm font-semibold text-ink truncate">{title}</p>
+                        <p className="text-xs text-ink-4 mt-0.5">{company}{date ? ` · Applied ${date}` : ''}</p>
                       </div>
-                      <span className={s.cls}>{s.label}</span>
+                      <StatusPill status={app.status} />
                     </div>
                   )
                 })
@@ -247,31 +249,31 @@ export default function StudentDashboard() {
         {/* Right column */}
         <div className="space-y-5">
           <div className="card overflow-hidden">
-            <div className="h-14 bg-blue" />
+            <div className="h-14 bg-brand" />
             <div className="px-5 pb-5">
               <div className="-mt-6 mb-3">
-                <div className="w-12 h-12 rounded-full bg-blue-DEFAULT border-4 border-white flex items-center justify-center text-white font-bold text-lg font-serif">
+                <div className="w-12 h-12 rounded-full bg-brand border-4 border-white flex items-center justify-center text-white font-bold text-lg font-extrabold">
                   {(profile?.name || user?.name || '?')[0]?.toUpperCase()}
                 </div>
               </div>
-              <p className="font-semibold text-blue">{profile?.name || user?.name || 'Your Name'}</p>
-              <p className="text-xs text-slate-400 mb-4 truncate">
+              <p className="font-semibold text-ink">{profile?.name || user?.name || 'Your Name'}</p>
+              <p className="text-xs text-ink-4 mb-4 truncate">
                 {profile?.university || profile?.course || user?.email || ''}
               </p>
               <div className="mb-4">
                 <div className="flex justify-between text-xs font-semibold mb-1.5">
-                  <span className="text-slate-600">Profile strength</span>
-                  <span className="text-blue-DEFAULT">{completion}%</span>
+                  <span className="text-ink-2">Profile strength</span>
+                  <span className="text-brand">{completion}%</span>
                 </div>
-                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-DEFAULT rounded-full transition-all duration-700"
+                <div className="h-1.5 bg-canvas-2 rounded-full overflow-hidden">
+                  <div className="h-full bg-brand rounded-full transition-all duration-700"
                     style={{ width: `${completion}%` }} />
                 </div>
               </div>
               {profile?.skills?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   {profile.skills.slice(0, 5).map((s) => (
-                    <span key={s} className="text-[11px] font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100">{s}</span>
+                    <span key={s} className="text-[11px] font-semibold px-2.5 py-1 bg-brand-soft text-brand-ink rounded-full border border-brand-soft">{s}</span>
                   ))}
                 </div>
               )}
@@ -282,8 +284,8 @@ export default function StudentDashboard() {
           </div>
 
           <div className="card p-5">
-            <h3 className="font-semibold text-blue text-sm mb-3 flex items-center gap-2">
-              <Icon name="upload" size={16} className="text-slate-400" /> Your CV
+            <h3 className="font-semibold text-ink text-sm mb-3 flex items-center gap-2">
+              <Icon name="upload" size={16} className="text-ink-4" /> Your CV
             </h3>
             {profile?.cv_path ? (
               <div className="bg-success-light border border-success/20 rounded-xl px-4 py-3 text-sm text-success-dark font-semibold flex items-center gap-2">

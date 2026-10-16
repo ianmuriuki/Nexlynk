@@ -21,16 +21,18 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
       <Toaster
-        position="top-right"
+        position="bottom-center"
         toastOptions={{
           duration: 4000,
           style: {
-            fontFamily: '"DM Sans", system-ui, sans-serif',
-            fontSize: '14px',
-            fontWeight: 500,
-            borderRadius: '12px',
-            boxShadow: '0 4px 24px rgba(11,29,63,.12)',
-            border: '1px solid #E2E8F0',
+            fontFamily: 'Manrope, system-ui, sans-serif',
+            fontSize: '13px',
+            fontWeight: 600,
+            borderRadius: '9999px',
+            background: '#16182B',
+            color: '#fff',
+            boxShadow: '0 18px 48px rgba(22,24,43,.16), 0 4px 12px rgba(22,24,43,.08)',
+            border: 'none',
           },
           success: { iconTheme: { primary: '#10B981', secondary: '#fff' } },
           error:   { iconTheme: { primary: '#EF4444', secondary: '#fff' } },

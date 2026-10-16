@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion } from 'framer-motion'
-import { Upload, X, CheckCircle, Plus } from 'lucide-react'
+
+import Icon from '@/components/Icon'
 import { supabase } from '@/lib/supabase'
 import { studentAPI } from '@/api/opportunities'
 import useAuthStore from '@/store/authStore'
@@ -37,7 +37,7 @@ const YEARS = [1, 2, 3, 4, 5, 6]
 function Field({ label, error, required, children }) {
   return (
     <div>
-      <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+      <label className="block text-sm font-semibold text-ink-2 mb-1.5">
         {label}{required && <span className="text-danger ml-0.5">*</span>}
       </label>
       {children}
@@ -76,7 +76,7 @@ export default function StudentProfile() {
 
   const profileKey = ['student-profile', user?.id]
 
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isPending, isError } = useQuery({
     queryKey: profileKey,
     queryFn: () => fetchProfile(user.id),
     enabled: !!user?.id,
@@ -160,34 +160,45 @@ export default function StudentProfile() {
 
   const completion = profile?.profile_completion ?? 0
 
-  if (isLoading) return (
-    <div className="p-8 max-w-3xl space-y-4">
+  if (isPending) return (
+    <div role="status" aria-label="Loading profile" className="p-6 lg:p-8 max-w-3xl space-y-4">
+      <div className="h-8 w-48 rounded bg-canvas-2 animate-shimmer" />
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+        <div key={i} className="h-12 rounded-xl bg-canvas-2 animate-shimmer" />
       ))}
+    </div>
+  )
+
+  if (isError) return (
+    <div className="p-6 lg:p-8 max-w-3xl">
+      <div className="card p-10 text-center">
+        <Icon name="alert-circle" size={28} className="mx-auto mb-3 text-warning" />
+        <h1 className="mb-2 text-lg font-extrabold text-ink">Could not load your profile</h1>
+        <p className="text-sm text-ink-3">Please try again shortly.</p>
+      </div>
     </div>
   )
 
   return (
     <div className="p-6 lg:p-8 max-w-3xl">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mb-7">
-        <h1 className="font-serif text-2xl font-bold text-blue">My Profile</h1>
-        <p className="text-slate-500 text-sm mt-1">Keep your profile up to date to match more opportunities.</p>
-      </motion.div>
+      <div className="mb-7 animate-fade-up">
+        <h1 className="text-2xl font-extrabold text-ink">My Profile</h1>
+        <p className="text-ink-3 text-sm mt-1">Keep your profile up to date to match more opportunities.</p>
+      </div>
 
       <div className="card p-5 mb-6">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-blue">Profile strength</p>
-          <span className="text-sm font-bold text-blue">{completion}%</span>
+          <p className="text-sm font-semibold text-ink">Profile strength</p>
+          <span className="text-sm font-bold text-ink">{completion}%</span>
         </div>
-        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+        <div className="h-2 bg-canvas-2 rounded-full overflow-hidden">
           <div
-            className="h-full bg-blue rounded-full transition-all duration-700"
+            className="h-full bg-brand rounded-full transition-all duration-700"
             style={{ width: `${completion}%` }}
           />
         </div>
         {completion < 100 && (
-          <p className="text-xs text-slate-400 mt-2">
+          <p className="text-xs text-ink-4 mt-2">
             Add more details to strengthen your profile.
           </p>
         )}
@@ -195,7 +206,7 @@ export default function StudentProfile() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
         <div className="card p-6 space-y-4">
-          <h2 className="font-semibold text-blue border-b border-slate-100 pb-3">Personal information</h2>
+          <h2 className="font-semibold text-ink border-b border-line pb-3">Personal information</h2>
 
           <div className="grid sm:grid-cols-2 gap-4">
             <Field label="Full name" required error={errors.name}>
@@ -220,7 +231,7 @@ export default function StudentProfile() {
         </div>
 
         <div className="card p-6 space-y-4">
-          <h2 className="font-semibold text-blue border-b border-slate-100 pb-3">Academic details</h2>
+          <h2 className="font-semibold text-ink border-b border-line pb-3">Academic details</h2>
 
           <Field label="University / Institution" error={errors.university}>
             <input {...register('university')} className="input" placeholder="Technical University of Mombasa" />
@@ -254,7 +265,7 @@ export default function StudentProfile() {
         </div>
 
         <div className="card p-6">
-          <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-4">About me</h2>
+          <h2 className="font-semibold text-ink border-b border-line pb-3 mb-4">About me</h2>
           <Field label="Bio" error={errors.about}>
             <textarea
               {...register('about')}
@@ -266,13 +277,13 @@ export default function StudentProfile() {
         </div>
 
         <div className="card p-6">
-          <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-4">Skills</h2>
+          <h2 className="font-semibold text-ink border-b border-line pb-3 mb-4">Skills</h2>
           <div className="flex flex-wrap gap-2 mb-4">
             {skills.map((s) => (
-              <span key={s} className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">
+              <span key={s} className="flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 bg-brand-soft text-brand-ink rounded-full border border-brand-soft">
                 {s}
-                <button type="button" onClick={() => removeSkill(s)} className="text-blue-400 hover:text-danger transition-colors">
-                  <X className="w-3 h-3" />
+                <button type="button" onClick={() => removeSkill(s)} className="text-brand-strong hover:text-danger transition-colors">
+                  <Icon name="x" size={12} />
                 </button>
               </span>
             ))}
@@ -286,10 +297,10 @@ export default function StudentProfile() {
               placeholder="Type a skill and press Enter (e.g. Python, React)"
             />
             <button type="button" onClick={addSkill} className="btn-secondary px-4">
-              <Plus className="w-4 h-4" />
+              <Icon name="plus" size={16} />
             </button>
           </div>
-          <p className="text-xs text-slate-400 mt-2">{skills.length}/30 skills</p>
+          <p className="text-xs text-ink-4 mt-2">{skills.length}/30 skills</p>
         </div>
 
         <button
@@ -305,12 +316,12 @@ export default function StudentProfile() {
       </form>
 
       <div className="card p-6 mt-5">
-        <h2 className="font-semibold text-blue border-b border-slate-100 pb-3 mb-4">
+        <h2 className="font-semibold text-ink border-b border-line pb-3 mb-4">
           Curriculum Vitae (CV)
         </h2>
         {profile?.cv_path ? (
           <div className="flex items-center gap-3 bg-success-light border border-success/20 rounded-xl px-4 py-3.5">
-            <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+            <Icon name="check-circle" size={20} className="shrink-0 text-success" />
             <div className="flex-1">
               <p className="text-sm font-semibold text-success-dark">CV uploaded</p>
               <p className="text-xs text-success-dark/70 mt-0.5">
@@ -326,13 +337,13 @@ export default function StudentProfile() {
         ) : (
           <div
             onClick={() => fileRef.current?.click()}
-            className="border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center cursor-pointer hover:border-blue hover:bg-blue-50/30 transition-all group"
+            className="border-2 border-dashed border-line-2 rounded-2xl p-10 text-center cursor-pointer hover:border-brand hover:bg-brand-softer/30 transition-all group"
           >
-            <Upload className="w-8 h-8 text-slate-300 group-hover:text-blue mx-auto mb-3 transition-colors" />
-            <p className="text-sm font-semibold text-slate-600 group-hover:text-blue">
+            <Icon name="upload" size={32} className="mx-auto mb-3 text-ink-4 transition-colors group-hover:text-brand" />
+            <p className="text-sm font-semibold text-ink-2 group-hover:text-brand">
               Click to upload your CV
             </p>
-            <p className="text-xs text-slate-400 mt-1">PDF only · Max 5MB</p>
+            <p className="text-xs text-ink-4 mt-1">PDF only · Max 5MB</p>
           </div>
         )}
         <input
@@ -343,8 +354,8 @@ export default function StudentProfile() {
           onChange={handleCVUpload}
         />
         {cvUploading && (
-          <div className="flex items-center gap-2 mt-3 text-sm text-blue">
-            <span className="w-4 h-4 border-2 border-blue/30 border-t-blue rounded-full animate-spin" />
+          <div className="flex items-center gap-2 mt-3 text-sm text-ink">
+            <span className="w-4 h-4 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
             Uploading...
           </div>
         )}

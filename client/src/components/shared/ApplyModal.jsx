@@ -8,8 +8,8 @@ import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
 const TYPE_STYLE = {
-  internship:  'bg-blue-100 text-blue-700',
-  'part-time': 'bg-purple-100 text-purple-700',
+  internship:  'bg-brand-soft text-brand-ink',
+  'part-time': 'bg-info-light text-info-dark',
   contract:    'bg-warning-light text-warning-dark',
   'full-time': 'bg-success-light text-success-dark',
 }
@@ -18,7 +18,7 @@ const TYPE_ICON_NAME = {
   internship:  'briefcase',
   'part-time': 'clock',
   contract:    'file',
-  'full-time': 'target',
+  'full-time': 'briefcase',
 }
 
 export default function ApplyModal({ opportunity, onClose, onSuccess }) {
@@ -34,6 +34,20 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
       opportunityAPI.trackView(opportunity.id).catch(() => {})
     }
   }, [opportunity?.id])
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
 
   const { data: profile, refetch: refetchProfile } = useQuery({
     queryKey: ['student-profile', user?.id],
@@ -53,7 +67,7 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
       await studentAPI.uploadCV(user.id, file)
       toast.success('CV uploaded!')
       await refetchProfile()
-      qc.invalidateQueries(['student-profile', user?.id])
+      qc.invalidateQueries({ queryKey: ['student-profile', user?.id] })
     } catch (e) {
       toast.error(e?.message || 'Upload failed')
     } finally {
@@ -66,7 +80,7 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
     mutationFn: () => opportunityAPI.apply(opportunity.id, { cover_letter: coverLetter }),
     onSuccess: () => {
       toast.success('Application submitted successfully!')
-      qc.invalidateQueries(['student-applications', user?.id])
+      qc.invalidateQueries({ queryKey: ['student-applications', user?.id] })
       onSuccess?.()
       onClose()
     },
@@ -89,30 +103,33 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-blue/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(20,21,40,0.42)] p-0 backdrop-blur-[3px] min-[768px]:p-6"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1,    y: 0  }}
           exit={{   opacity: 0, scale: 0.95, y: 20  }}
           onClick={e => e.stopPropagation()}
-          className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="apply-modal-title"
+          className="h-dvh max-h-dvh w-full overflow-y-auto rounded-none bg-white shadow-pop min-[768px]:h-auto min-[768px]:max-h-[90dvh] min-[768px]:max-w-2xl min-[768px]:rounded-modal"
         >
           {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-start justify-between z-10">
+          <div className="sticky top-0 bg-white border-b border-line px-6 py-4 flex items-start justify-between z-10">
             <div className="flex items-start gap-3 flex-1 min-w-0">
-              <div className="w-10 h-10 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Icon name={TYPE_ICON_NAME[opportunity.type] || 'briefcase'} size={18} className="text-blue-700" />
+              <div className="w-10 h-10 bg-brand-soft border border-brand-soft rounded-xl flex items-center justify-center flex-shrink-0">
+                <Icon name={TYPE_ICON_NAME[opportunity.type] || 'briefcase'} size={18} className="text-brand-ink" />
               </div>
               <div className="min-w-0">
-                <h2 className="font-bold text-blue text-lg leading-tight truncate">{opportunity.title}</h2>
-                <p className="text-sm text-slate-400 mt-0.5 flex items-center gap-1">
+                <h2 id="apply-modal-title" className="text-lg font-extrabold leading-tight text-ink truncate">{opportunity.title}</h2>
+                <p className="text-sm text-ink-4 mt-0.5 flex items-center gap-1">
                   <Icon name="building" size={14} />{opportunity.company_name}
                 </p>
               </div>
             </div>
-            <button onClick={onClose}
-              className="ml-4 p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors flex-shrink-0">
+            <button onClick={onClose} aria-label="Close" autoFocus
+              className="ml-4 p-1.5 rounded-lg hover:bg-canvas-2 text-ink-4 hover:text-ink-2 transition-colors flex-shrink-0">
               <Icon name="x" size={20} />
             </button>
           </div>
@@ -122,27 +139,27 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
             {/* Quick facts */}
             <div className="flex flex-wrap gap-3">
               {opportunity.type && (
-                <span className={clsx('badge capitalize', TYPE_STYLE[opportunity.type] || 'bg-slate-100 text-slate-500')}>
+                <span className={clsx('badge capitalize', TYPE_STYLE[opportunity.type] || 'bg-canvas-2 text-ink-3')}>
                   {opportunity.type}
                 </span>
               )}
               {opportunity.location && (
-                <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5 text-xs text-ink-3">
                   <Icon name="map-pin" size={14} /> {opportunity.location}
                 </span>
               )}
               {opportunity.stipend && (
-                <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5 text-xs text-ink-3">
                   <Icon name="briefcase" size={14} /> {opportunity.stipend}
                 </span>
               )}
               {opportunity.positions && (
-                <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5 text-xs text-ink-3">
                   <Icon name="users" size={14} /> {opportunity.positions} position{opportunity.positions > 1 ? 's' : ''}
                 </span>
               )}
               {opportunity.duration && (
-                <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="flex items-center gap-1.5 text-xs text-ink-3">
                   <Icon name="clock" size={14} /> {opportunity.duration}
                 </span>
               )}
@@ -154,18 +171,18 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
             {/* Description */}
             {opportunity.description && (
               <div>
-                <h3 className="text-sm font-bold text-blue mb-2">About the role</h3>
-                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{opportunity.description}</p>
+                <h3 className="text-sm font-bold text-ink mb-2">About the role</h3>
+                <p className="text-sm text-ink-2 leading-relaxed whitespace-pre-line">{opportunity.description}</p>
               </div>
             )}
 
             {/* Disciplines */}
             {disciplines.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold text-blue mb-2">Target disciplines</h3>
+                <h3 className="text-sm font-bold text-ink mb-2">Target disciplines</h3>
                 <div className="flex flex-wrap gap-2">
                   {disciplines.map(d => (
-                    <span key={d} className="text-xs font-semibold px-3 py-1.5 bg-slate-100 text-slate-600 rounded-full">{d}</span>
+                    <span key={d} className="text-xs font-semibold px-3 py-1.5 bg-canvas-2 text-ink-2 rounded-full">{d}</span>
                   ))}
                 </div>
               </div>
@@ -174,10 +191,10 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
             {/* Required skills */}
             {skills.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold text-blue mb-2">Required skills</h3>
+                <h3 className="text-sm font-bold text-ink mb-2">Required skills</h3>
                 <div className="flex flex-wrap gap-2">
                   {skills.map(s => (
-                    <span key={s} className="text-xs font-semibold px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full border border-blue-100">{s}</span>
+                    <span key={s} className="text-xs font-semibold px-3 py-1.5 bg-brand-soft text-brand-ink rounded-full border border-brand-soft">{s}</span>
                   ))}
                 </div>
               </div>
@@ -220,8 +237,8 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
 
             {/* Cover letter */}
             <div>
-              <label className="block text-sm font-bold text-blue mb-1.5">
-                Cover Letter <span className="text-slate-400 font-normal">(optional)</span>
+              <label className="block text-sm font-bold text-ink mb-1.5">
+                Cover Letter <span className="text-ink-4 font-normal">(optional)</span>
               </label>
               <textarea
                 value={coverLetter}
@@ -231,18 +248,18 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
                 className="input resize-none"
                 placeholder="Briefly explain why you're a good fit for this role..."
               />
-              <p className="text-xs text-slate-400 mt-1 text-right">{coverLetter.length}/1000</p>
+              <p className="text-xs text-ink-4 mt-1 text-right">{coverLetter.length}/1000</p>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 bg-white border-t border-slate-100 px-6 py-4 flex gap-3">
-            <button onClick={onClose} className="btn-secondary flex-1 py-3">Cancel</button>
+          <div className="sticky bottom-0 bg-white border-t border-line px-6 py-4 flex gap-3">
+            <button onClick={onClose} className="btn btn-secondary flex-1">Cancel</button>
             <button
               onClick={() => applyMutation.mutate()}
               disabled={applyMutation.isPending || cvUploading}
               className={clsx(
-                'flex-[2] py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2',
+                'btn btn-lg flex-[2] font-bold text-sm',
                 !hasCV ? 'bg-warning text-white hover:bg-yellow-600' : 'btn-primary'
               )}
             >

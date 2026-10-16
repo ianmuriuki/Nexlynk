@@ -1,26 +1,27 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
-import { Search, X, FileText } from 'lucide-react'
+
+import Icon from '@/components/Icon'
+import StatusPill from '@/components/ui/StatusPill'
 import { adminAPI } from '@/api/admin'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
 const STATUS_CFG = {
-  pending:     { cls: 'badge-pending',     label: 'Pending'     },
-  shortlisted: { cls: 'badge-shortlisted', label: 'Shortlisted' },
-  placed:      { cls: 'badge-placed',      label: 'Placed'      },
-  rejected:    { cls: 'badge-rejected',    label: 'Rejected'    },
+  pending:     { label: 'Pending'     },
+  shortlisted: { label: 'Shortlisted' },
+  placed:      { label: 'Placed'      },
+  rejected:    { label: 'Rejected'    },
 }
 
 const TABS = ['All', 'pending', 'shortlisted', 'placed', 'rejected']
 
 function Skeleton() {
   return [...Array(6)].map((_, i) => (
-    <tr key={i} className="border-b border-slate-100">
+    <tr key={i} className="border-b border-line">
       {[...Array(7)].map((_, j) => (
         <td key={j} className="px-5 py-4">
-          <div className="h-4 bg-slate-100 rounded animate-pulse w-3/4" />
+          <div className="h-4 bg-canvas-2 rounded animate-shimmer w-3/4" />
         </td>
       ))}
     </tr>
@@ -39,7 +40,7 @@ export default function AdminApplications() {
     ...(tab !== 'All' && { status: tab }),
   }
 
-  const { data, isLoading } = useQuery({
+  const { data, isPending, isError } = useQuery({
     queryKey: ['admin-applications-full', params],
     queryFn:  () => adminAPI.applications(params).then(r => r.data.data ?? r.data),
     keepPreviousData: true,
@@ -49,8 +50,8 @@ export default function AdminApplications() {
     mutationFn: ({ id, status }) => adminAPI.updateAppStatus(id, { status }),
     onSuccess:  () => {
       toast.success('Status updated')
-      qc.invalidateQueries(['admin-applications-full'])
-      qc.invalidateQueries(['admin-dashboard'])
+      qc.invalidateQueries({ queryKey: ['admin-applications-full'] })
+      qc.invalidateQueries({ queryKey: ['admin-dashboard'] })
     },
     onError: (e) => toast.error(e?.message || 'Update failed'),
   })
@@ -76,15 +77,15 @@ export default function AdminApplications() {
   return (
     <div className="p-6 lg:p-8 max-w-screen-xl">
 
-      <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} className="mb-7">
-        <h1 className="font-serif text-2xl font-bold text-blue">All Applications</h1>
+      <div className="mb-7 animate-fade-up">
+        <h1 className="font-extrabold text-2xl font-bold text-ink">All Applications</h1>
         <p className="text-slate-500 text-sm mt-1">
-          {isLoading ? 'Loading...' : `${pagination?.total ?? allApps.length} total applications`}
+          {isPending ? <span role="status" aria-label="Loading applications" className="inline-block h-4 w-36 rounded bg-canvas-2 animate-shimmer" /> : isError ? 'Applications could not be loaded' : `${pagination?.total ?? allApps.length} total applications`}
           {placedCount > 0 && (
             <span className="ml-2 text-success font-semibold">· {placedCount} placements confirmed</span>
           )}
         </p>
-      </motion.div>
+      </div>
 
       {/* Status summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
@@ -92,10 +93,10 @@ export default function AdminApplications() {
           <button key={key}
             onClick={() => { setTab(tab === key ? 'All' : key); setPage(1) }}
             className={clsx('card p-4 text-left hover:shadow-card-hover transition-all',
-              tab === key && 'ring-2 ring-blue-700'
+              tab === key && 'ring-2 ring-brand'
             )}>
-            <div className="font-serif text-2xl font-bold text-blue mb-1">{counts[key] ?? 0}</div>
-            <span className={cfg.cls}>{cfg.label}</span>
+            <div className="font-extrabold text-2xl font-bold text-ink mb-1">{isError ? '—' : counts[key] ?? 0}</div>
+            <StatusPill status={key} />
           </button>
         ))}
       </div>
@@ -106,20 +107,20 @@ export default function AdminApplications() {
           {TABS.map(t => (
             <button key={t} onClick={() => { setTab(t); setPage(1) }}
               className={clsx('px-4 py-1.5 rounded-lg text-xs font-bold capitalize transition-all whitespace-nowrap',
-                tab === t ? 'bg-white text-blue shadow-sm' : 'text-slate-500 hover:text-blue'
+                tab === t ? 'bg-white text-ink shadow-sm' : 'text-slate-500 hover:text-brand'
               )}>
-              {t === 'All' ? `All (${allApps.length})` : `${t} (${counts[t] ?? 0})`}
+              {isError ? t : t === 'All' ? `All (${allApps.length})` : `${t} (${counts[t] ?? 0})`}
             </button>
           ))}
         </div>
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Icon name="search" size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-4" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             className="input pl-10" placeholder="Search student, role, or company..." />
           {search && (
             <button onClick={() => setSearch('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-              <X className="w-4 h-4" />
+              <Icon name="x" size={16} />
             </button>
           )}
         </div>
@@ -130,17 +131,19 @@ export default function AdminApplications() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
+              <tr className="bg-canvas border-b border-line">
                 {['Student','Institution','Opportunity','Company','Applied','Status','Update'].map(h => (
                   <th key={h} className="px-5 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {isLoading ? <Skeleton /> : filtered.length === 0 ? (
+            <tbody className="divide-y divide-line">
+              {isPending ? <Skeleton /> : isError ? (
+                <tr><td colSpan={7} className="px-5 py-16 text-center"><Icon name="alert-circle" size={28} className="mx-auto mb-2 text-warning" /><p className="text-sm font-semibold text-ink-2">Could not load applications</p></td></tr>
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-5 py-16 text-center">
-                    <FileText className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                    <Icon name="file" size={40} className="mx-auto mb-3 text-line-2" />
                     <p className="text-slate-400 text-sm font-medium">No applications found</p>
                     {search && (
                       <button onClick={() => setSearch('')} className="btn-primary btn-sm mt-3">
@@ -154,33 +157,32 @@ export default function AdminApplications() {
                 const university  = a.student_university  || '—'
                 const oppTitle    = a.opportunity_title   || '—'
                 const coName      = a.company_name        || '—'
-                const cfg         = STATUS_CFG[a.status]  || STATUS_CFG.pending
-                const date        = a.created_at
+                                const date        = a.created_at
                   ? new Date(a.created_at).toLocaleDateString('en-KE', { day:'numeric', month:'short' })
                   : '—'
                 const initial = studentName[0]?.toUpperCase() || '?'
 
                 return (
-                  <tr key={a.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={a.id} className="hover:bg-canvas/80 transition-colors">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full bg-blue flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                           {initial}
                         </div>
-                        <p className="text-sm font-semibold text-blue">{studentName}</p>
+                        <p className="text-sm font-semibold text-ink">{studentName}</p>
                       </div>
                     </td>
                     <td className="px-5 py-4 text-sm text-slate-500 max-w-[140px] truncate">{university}</td>
                     <td className="px-5 py-4 text-sm text-slate-700 font-medium max-w-[160px] truncate">{oppTitle}</td>
                     <td className="px-5 py-4 text-sm text-slate-500 whitespace-nowrap">{coName}</td>
                     <td className="px-5 py-4 text-sm text-slate-400 whitespace-nowrap">{date}</td>
-                    <td className="px-5 py-4"><span className={cfg.cls}>{cfg.label}</span></td>
+                    <td className="px-5 py-4"><StatusPill status={a.status} /></td>
                     <td className="px-5 py-4">
                       <select
                         defaultValue={a.status}
                         onChange={(e) => statusMutation.mutate({ id: a.id, status: e.target.value })}
                         disabled={statusMutation.isPending}
-                        className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 font-medium text-slate-700 outline-none focus:border-blue-700 cursor-pointer hover:border-blue-700 transition-colors"
+                        className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-canvas font-medium text-slate-700 outline-none focus:border-brand cursor-pointer hover:border-brand transition-colors"
                       >
                         <option value="pending">Pending</option>
                         <option value="shortlisted">Shortlisted</option>
@@ -206,7 +208,7 @@ export default function AdminApplications() {
               return (
                 <button key={p} onClick={() => setPage(p)}
                   className={clsx('w-8 h-8 rounded-lg text-xs font-bold transition-all',
-                    page === p ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                    page === p ? 'bg-brand text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                   )}>{p}</button>
               )
             })}
