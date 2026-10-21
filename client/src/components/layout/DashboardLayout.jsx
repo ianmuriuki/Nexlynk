@@ -29,6 +29,7 @@ const NAV = {
     { label: 'Dashboard',    short: 'Home',         to: '/admin',              icon: 'bar-chart' },
     { label: 'Companies',    short: 'Companies',    to: '/admin/companies',    icon: 'building' },
     { label: 'Applications', short: 'Applications', to: '/admin/applications', icon: 'file' },
+    { label: 'Homepage jobs', short: 'Homepage', to: '/admin/homepage', icon: 'star' },
   ],
 }
 
@@ -259,7 +260,7 @@ export default function DashboardLayout({ role }) {
         </button>
 
         <Link to="/" className={clsx('flex items-center gap-[11px] px-2 pb-4 pt-1', rail && 'justify-center px-0')}>
-          <NexlynkLogo variant="icon" className="!h-9 !w-9 flex-shrink-0 !rounded-[11px] shadow-brand" />
+          <NexlynkLogo variant="icon" className="!h-9 !w-9 flex-shrink-0" />
           {!rail && (
             <div className="min-w-0">
               <div className="text-[17px] font-extrabold leading-tight tracking-tight text-ink">Nexlynk</div>
@@ -426,7 +427,7 @@ export default function DashboardLayout({ role }) {
             to="/company/post"
             aria-label="Post opportunity"
             title="Post opportunity"
-            className="pointer-events-auto grid h-14 w-14 flex-shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#8273FF] via-brand to-brand-strong shadow-[0_8px_20px_rgba(109,93,246,.34),0_2px_8px_rgba(22,24,43,.12)] active:scale-[.94]"
+            className="pointer-events-auto grid h-14 w-14 flex-shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#D9822B] via-brand to-brand-strong shadow-[0_6px_16px_rgba(191,87,15,.18),0_2px_8px_rgba(11,35,65,.10)] active:scale-[.94]"
           >
             <Icon name="plus" size={24} sw={2.2} color="#fff" />
           </Link>

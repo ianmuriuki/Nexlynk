@@ -84,7 +84,7 @@ export default function RegisterPage() {
           <h1 className="font-serif text-3xl font-black text-navy mb-1">Create account</h1>
           <p className="text-slate-500 text-sm mb-7">
             Already registered?{' '}
-            <Link to="/login" className="text-blue-DEFAULT font-semibold hover:underline">Sign in</Link>
+            <Link to="/login" className="text-brand font-semibold hover:underline">Sign in</Link>
           </p>
 
           {step === 'form' ? (
@@ -128,9 +128,9 @@ export default function RegisterPage() {
                 {isCompany && field('contact_name', 'Contact person', { minLength: 2 })}
                 {field('email', isCompany ? 'Work email' : 'Email address', { type: 'email', autoComplete: 'email' })}
                 <div className="flex items-start gap-2.5 pt-1">
-                  <input type="checkbox" required id="terms" className="mt-0.5 accent-blue-DEFAULT" />
+                  <input type="checkbox" required id="terms" className="mt-0.5 accent-brand" />
                   <label htmlFor="terms" className="text-xs text-slate-500 leading-relaxed">
-                    I agree to the Terms of Service and Privacy Policy
+                    I agree to the <Link to="/terms" className="font-semibold text-brand hover:underline">Terms of Service</Link> and <Link to="/privacy" className="font-semibold text-brand hover:underline">Privacy Policy</Link>
                   </label>
                 </div>
                 <button type="submit" disabled={loading} className="btn-primary w-full py-3 text-sm">

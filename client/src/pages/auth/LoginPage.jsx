@@ -45,14 +45,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex font-sans">
       <div
-        className="hidden lg:flex w-[45%] flex-col px-12 py-10 relative overflow-hidden bg-blue"
+        className="hidden lg:flex w-[45%] flex-col px-12 py-10 relative overflow-hidden bg-ink"
         style={AUTH_IMAGES.login ? { backgroundImage: `url(${AUTH_IMAGES.login})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
       >
-        {AUTH_IMAGES.login && <div className="absolute inset-0 bg-blue/70" />}
+        {AUTH_IMAGES.login && <div className="absolute inset-0 bg-ink/70" />}
         <Link to="/" className="relative z-10"><NexlynkLogo variant="full" /></Link>
         <div className="flex-1 flex flex-col justify-center relative z-10">
           <h2 className="font-serif text-4xl font-black text-white leading-tight mb-5">
-            Your career journey<br />starts <span className="text-blue-300">here</span>
+            Your career journey<br />starts <span className="text-brand">here</span>
           </h2>
           <p className="text-white/55 text-base leading-relaxed max-w-xs">
             Join students and companies building Kenya's workforce of tomorrow.
@@ -63,10 +63,10 @@ export default function LoginPage() {
 
       <div className="flex-1 flex items-center justify-center px-5 py-12 bg-slate-50">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[420px]">
-          <h1 className="font-serif text-3xl font-black text-blue mb-1">Welcome back</h1>
+          <h1 className="font-serif text-3xl font-black text-ink mb-1">Welcome back</h1>
           <p className="text-slate-500 text-sm mb-7">
             No account yet?{' '}
-            <Link to="/register" className="text-blue-DEFAULT font-semibold hover:underline">Register</Link>
+            <Link to="/register" className="text-brand font-semibold hover:underline">Register</Link>
           </p>
 
           {step === 'email' ? (

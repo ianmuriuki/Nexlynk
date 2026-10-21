@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import {
@@ -20,6 +21,8 @@ import {
 import NexlynkLogo from "@/components/shared/NexlynkLogo";
 import "./landing.css";
 import IMAGES from "./images";
+import OpportunityCard from '@/components/shared/OpportunityCard';
+import { getHomepageJobs, homepageLogoUrl } from '@/api/homepage';
 
 const NAV = [
   { label: "About", href: "#about" },
@@ -28,7 +31,7 @@ const NAV = [
   { label: "Features", href: "#features" },
 ];
 
-// Placeholder disciplines. Replace with the ones your platform really lists.
+// Existing discipline categories and images from the original landing section.
 const WORK = [
   { title: "Civil and Structural", a: "Internships", b: "Attachments" },
   { title: "Mechanical", a: "Internships", b: "Attachments" },
@@ -412,6 +415,12 @@ function About() {
 
 // ─── Opportunities ───
 function Work() {
+  const { data: jobs = [], isPending, isError } = useQuery({
+    queryKey: ['homepage-jobs'],
+    queryFn: () => getHomepageJobs().then((response) => response.data.data ?? []),
+    staleTime: 60 * 1000,
+  })
+
   return (
     <section id="opportunities" className="nx-section">
       <div className="nx-container">
@@ -421,30 +430,91 @@ function Work() {
               Find work that fits your discipline
             </Heading>
           </Reveal>
+
           <Reveal className="nx-work-grid">
-            {WORK.map((w, i) => (
-              <Link key={w.title} to="/register" className="nx-work-card">
+            {WORK.map((item, index) => (
+              <Link key={item.title} to="/register" className="nx-work-card">
                 <div className="nx-work-image">
-                  <Cover src={IMAGES.work[i]} />
-                  <span className="nx-work-arrow">
-                    <ArrowUpRight size={16} />
-                  </span>
+                  <Cover src={IMAGES.work[index]} />
+                  <span className="nx-work-arrow"><ArrowUpRight size={16} /></span>
                 </div>
                 <div className="nx-work-info">
-                  <h4 className="nx-h4">{w.title}</h4>
+                  <h3 className="nx-h4">{item.title}</h3>
                   <div className="nx-work-meta">
-                    <span className="nx-body">{w.a}</span>
+                    <span className="nx-body">{item.a}</span>
                     <span className="nx-divider" />
-                    <span className="nx-body">{w.b}</span>
+                    <span className="nx-body">{item.b}</span>
                   </div>
                 </div>
               </Link>
             ))}
           </Reveal>
+
+          <div className="nx-featured-jobs">
+            <div className="nx-featured-jobs-heading">
+              <div>
+                <p className="nx-caption nx-primary-c">Selected for you</p>
+                <h3 className="nx-h3">Available opportunities</h3>
+              </div>
+              <Link to="/register" className="nx-featured-jobs-link">Explore and apply</Link>
+            </div>
+
+            {isPending ? (
+              <div role="status" aria-label="Loading featured opportunities" className="nx-job-list">
+                {[1, 2, 3].map((item) => <div key={item} className="nx-job-skeleton" />)}
+              </div>
+            ) : isError ? (
+              <p role="alert" className="nx-job-message">Featured opportunities could not be loaded.</p>
+            ) : jobs.length === 0 ? (
+              <p className="nx-job-message">No featured opportunities are available right now.</p>
+            ) : (
+              <div className="nx-job-list">
+                {jobs.map((job) => {
+                  const deadline = job.application_deadline
+                    ? new Date(job.application_deadline + 'T00:00:00+03:00').toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : null
+                  return (
+                    <article key={job.id} className="nx-job-row">
+                      <div className="nx-job-main">
+                        <div className="nx-job-logo">
+                          <span>{(job.company_name || 'Company').trim().charAt(0).toUpperCase()}</span>
+                          {homepageLogoUrl(job.company_logo) && (
+                            <img src={homepageLogoUrl(job.company_logo)} alt="" loading="lazy" onError={(event) => event.currentTarget.remove()} />
+                          )}
+                        </div>
+                        <div className="nx-job-copy">
+                          <p className="nx-job-company">{job.company_name || 'Verified company'}</p>
+                          <h4 className="nx-job-title">{job.title || 'Untitled opportunity'}</h4>
+                          {job.description && <p className="nx-job-description">{job.description}</p>}
+                          <div className="nx-job-details">
+                            {job.type && <span>{job.type}</span>}
+                            {job.location && <span>{job.location}</span>}
+                            {job.duration && <span>{job.duration}</span>}
+                            {job.stipend && <strong>{job.stipend}</strong>}
+                          </div>
+                          {Array.isArray(job.skills_required) && job.skills_required.length > 0 && (
+                            <div className="nx-job-skills">
+                              {job.skills_required.filter((skill) => typeof skill === 'string').slice(0, 3).map((skill, index) => (
+                                <span key={skill + index}>{skill}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="nx-job-action">
+                        {deadline && <span className="nx-job-deadline">Deadline {deadline}</span>}
+                        <Link to="/register" className="nx-job-apply">Apply</Link>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </section>
-  );
+  )
 }
 
 // ─── Services ───
@@ -461,18 +531,12 @@ function Services() {
               <Reveal key={s}>
                 <Link to="/register" className="nx-service-card">
                   <div className="nx-service-top">
-                    <div className="nx-service-num">
-                      {String(i + 1).padStart(2, "0")}
-                    </div>
+                    <div className="nx-service-num">{String(i + 1).padStart(2, "0")}</div>
                     <div className="nx-service-data">
-                      <div className="nx-service-img">
-                        <Cover src={IMAGES.services[i]} />
-                      </div>
+                      <div className="nx-service-img"><Cover src={IMAGES.services[i]} /></div>
                       <div className="nx-service-left">
                         <h3 className="nx-h4 nx-service-name">{s}</h3>
-                        <span className="nx-circle bordered">
-                          <ArrowSwap />
-                        </span>
+                        <span className="nx-circle bordered"><ArrowSwap /></span>
                       </div>
                     </div>
                   </div>
@@ -480,13 +544,11 @@ function Services() {
               </Reveal>
             ))}
           </div>
-          <Reveal>
-            <Button to="/register">Create free account</Button>
-          </Reveal>
+          <Reveal><Button to="/register">Create free account</Button></Reveal>
         </div>
       </div>
     </section>
-  );
+  )
 }
 
 // ─── How it works ───

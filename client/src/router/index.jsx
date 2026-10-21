@@ -7,6 +7,7 @@ import NotFound   from '@/pages/NotFound'
 const LandingPage         = lazy(() => import('@/pages/landing/LandingPage'))
 const LoginPage           = lazy(() => import('@/pages/auth/LoginPage'))
 const RegisterPage        = lazy(() => import('@/pages/auth/RegisterPage'))
+const LegalPage            = lazy(() => import('@/pages/legal/LegalPage'))
 
 const StudentDashboard    = lazy(() => import('@/pages/student/StudentDashboard'))
 const StudentProfile      = lazy(() => import('@/pages/student/StudentProfile'))
@@ -21,6 +22,7 @@ const CompanySettings     = lazy(() => import('@/pages/company/CompanySettings')
 const AdminDashboard      = lazy(() => import('@/pages/admin/AdminDashboard'))
 const AdminCompanies      = lazy(() => import('@/pages/admin/AdminCompanies'))
 const AdminApplications   = lazy(() => import('@/pages/admin/AdminApplications'))
+const AdminHomepage       = lazy(() => import('@/pages/admin/AdminHomepage'))
 
 const DashboardLayout     = lazy(() => import('@/components/layout/DashboardLayout'))
 
@@ -45,6 +47,8 @@ const router = createBrowserRouter([
 
   { path: '/login',           element: <SW><LoginPage /></SW>          },
   { path: '/register',        element: <SW><RegisterPage /></SW>       },
+  { path: '/terms',            element: <SW><LegalPage kind="terms" /></SW>   },
+  { path: '/privacy',          element: <SW><LegalPage kind="privacy" /></SW> },
 
   {
     element: <RequireAuth roles={['student']} />,
@@ -80,6 +84,7 @@ const router = createBrowserRouter([
         { path: '/admin',              element: <SW><AdminDashboard /></SW>    },
         { path: '/admin/companies',    element: <SW><AdminCompanies /></SW>    },
         { path: '/admin/applications', element: <SW><AdminApplications /></SW> },
+        { path: '/admin/homepage', element: <SW><AdminHomepage /></SW> },
       ],
     }],
   },

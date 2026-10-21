@@ -124,12 +124,12 @@ export default function ApplicationsChart() {
           <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="gApps"   x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#6D5DF6" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#6D5DF6" stopOpacity={0}   />
+                <stop offset="5%"  stopColor="#B94F0B" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#B94F0B" stopOpacity={0}   />
               </linearGradient>
               <linearGradient id="gShort"  x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#4A3CC7" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#4A3CC7" stopOpacity={0}   />
+                <stop offset="5%"  stopColor="#7A330A" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#7A330A" stopOpacity={0}   />
               </linearGradient>
               <linearGradient id="gPlace"  x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%"  stopColor="#21B26B" stopOpacity={0.2} />
@@ -162,21 +162,21 @@ export default function ApplicationsChart() {
               type="monotone"
               dataKey="applications"
               name="Applications"
-              stroke="#6D5DF6"
+              stroke="#B94F0B"
               strokeWidth={2}
               fill="url(#gApps)"
               dot={false}
-              activeDot={{ r: 4, fill: '#6D5DF6', strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: '#B94F0B', strokeWidth: 0 }}
             />
             <Area
               type="monotone"
               dataKey="shortlisted"
               name="Shortlisted"
-              stroke="#4A3CC7"
+              stroke="#7A330A"
               strokeWidth={2}
               fill="url(#gShort)"
               dot={false}
-              activeDot={{ r: 4, fill: '#4A3CC7', strokeWidth: 0 }}
+              activeDot={{ r: 4, fill: '#7A330A', strokeWidth: 0 }}
             />
             <Area
               type="monotone"

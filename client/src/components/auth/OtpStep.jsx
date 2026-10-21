@@ -63,7 +63,7 @@ export default function OtpStep({ email, onVerified, onResend, onBack }) {
       </button>
       <div className="flex justify-between text-xs">
         <button type="button" onClick={onBack} className="text-slate-500 hover:underline">Change email</button>
-        <button type="button" onClick={resend} disabled={wait > 0} className="text-blue-DEFAULT disabled:text-slate-400">
+        <button type="button" onClick={resend} disabled={wait > 0} className="text-brand disabled:text-slate-400">
           {wait > 0 ? `Resend in ${wait}s` : 'Resend code'}
         </button>
       </div>

@@ -5,15 +5,15 @@ export default {
     extend: {
       colors: {
         brand: {
-          DEFAULT: '#6D5DF6',
-          strong: '#5B49E8',
-          press: '#4F3FD6',
-          ink: '#4A3CC7',
-          soft: '#EEEBFF',
-          softer: '#F6F4FF',
+          DEFAULT: '#BF570F',
+          strong: '#AF4B0A',
+          press: '#9C4108',
+          ink: '#74320A',
+          soft: '#FFF0E4',
+          softer: '#FFF8F1',
         },
         canvas: { DEFAULT: '#F4F5FA', 2: '#EDEEF6' },
-        ink: { DEFAULT: '#16182B', 2: '#3A3E52', 3: '#5A5F6E', 4: '#626775', 5: '#767C8B' },
+        ink: { DEFAULT: '#0B2341', 2: '#26384D', 3: '#566579', 4: '#69788A', 5: '#8995A3' },
         line: { DEFAULT: '#ECEDF3', 2: '#E2E3EC', 3: '#D6D8E2' },
         blue: {
           DEFAULT: '#3B82F6',
@@ -58,7 +58,7 @@ export default {
         soft:         '0 2px 6px rgba(22,24,43,.05), 0 8px 24px rgba(22,24,43,.05)',
         'card-hover': '0 6px 16px rgba(22,24,43,.07), 0 18px 44px rgba(22,24,43,.08)',
         pop:          '0 18px 48px rgba(22,24,43,.16), 0 4px 12px rgba(22,24,43,.08)',
-        brand:        '0 10px 26px rgba(109,93,246,.34)',
+        brand:        '0 8px 20px rgba(191,87,15,.17)',
       },
       borderRadius: {
         modal: '22px',
