@@ -74,7 +74,7 @@ export default function StudentDashboard() {
   const appliedIds       = new Set(applications.map(a => a.opportunity_id))
 
   return (
-    <div className="p-6 lg:p-8 max-w-screen-xl">
+    <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 max-w-screen-xl">
 
       {/* Apply Modal */}
       {selectedOpp && (
@@ -100,7 +100,7 @@ export default function StudentDashboard() {
       {/* Profile completion banner */}
       {!profileLoading && !profileError && completion < 100 && (
         <motion.div initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} transition={{ delay:.1 }}
-          className="bg-brand rounded-2xl px-6 py-5 flex items-center justify-between gap-6 mb-7"
+          className="bg-brand rounded-2xl px-4 sm:px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 mb-7"
         >
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2.5">
@@ -126,8 +126,8 @@ export default function StudentDashboard() {
         <StatCard icon="clock"        label="Total applications"  value={appsError ? 'N/A' : applications.length} accent="bg-warning-light text-warning"   loading={appsLoading} />
       </div>
 
-      <div className="grid xl:grid-cols-[1fr_300px] gap-6">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-6">
+        <div className="min-w-0 space-y-6">
 
           {/* Opportunities */}
           <div className="card overflow-hidden">
@@ -247,7 +247,7 @@ export default function StudentDashboard() {
         </div>
 
         {/* Right column */}
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           <div className="card overflow-hidden">
             <div className="h-14 bg-brand" />
             <div className="px-5 pb-5">

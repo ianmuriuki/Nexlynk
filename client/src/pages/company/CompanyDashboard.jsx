@@ -135,7 +135,7 @@ export default function CompanyDashboard() {
   const incomplete  = !profileLoading && !profileError && profile && (!profile.industry || !profile.description || !profile.contact_name)
 
   return (
-    <div className="p-6 lg:p-8 max-w-screen-xl">
+    <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 max-w-screen-xl">
       <CvPreviewModal
         open={Boolean(cvPreview)}
         url={cvPreview?.url}
@@ -144,10 +144,10 @@ export default function CompanyDashboard() {
       />
 
       <div
-        className="flex items-start justify-between mb-7"
+        className="flex flex-wrap items-start justify-between gap-3 mb-7"
       >
-        <div>
-          <h1 className="text-2xl font-extrabold text-ink">{companyName}</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-extrabold text-ink break-words">{companyName}</h1>
           <p className="text-ink-3 text-sm mt-1">
             {profile?.industry || 'Company'}
             {profile?.company_size ? ` · ${profile.company_size} employees` : ''}
@@ -155,7 +155,7 @@ export default function CompanyDashboard() {
             {profile?.status === 'pending' && <StatusPill status="pending" label="Pending approval" />}
           </p>
         </div>
-        <Link to="/company/post" className="btn-primary text-sm">
+        <Link to="/company/post" className="btn-primary text-sm whitespace-nowrap">
           <Icon name="plus" size={16} /> Post opportunity
         </Link>
       </div>
@@ -181,8 +181,8 @@ export default function CompanyDashboard() {
         <StatCard icon="check-circle" label="Placed"           value={appsError ? 'N/A' : placed}           accent="bg-success-light text-success"  loading={appsLoading} />
       </div>
 
-      <div className="grid xl:grid-cols-[1fr_340px] gap-6">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-6">
+        <div className="min-w-0 space-y-6">
 
           {/* Opportunities table */}
           <div className="card overflow-hidden">
@@ -283,7 +283,7 @@ export default function CompanyDashboard() {
               const color   = AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length]
 
               return (
-                <div key={a.id} className="px-6 py-4 flex items-center gap-4 border-b border-line last:border-0 hover:bg-canvas/80 transition-colors">
+                <div key={a.id} className="px-4 sm:px-6 py-4 flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 border-b border-line last:border-0 hover:bg-canvas/80 transition-colors">
                   <div className={`w-10 h-10 rounded-full ${color} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
                     {initial}
                   </div>
@@ -299,7 +299,7 @@ export default function CompanyDashboard() {
                     )}
                   </div>
                   <StatusPill status={a.status} />
-                  <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
                     {a.status === 'pending' && (
                       <>
                         <button onClick={() => statusMutation.mutate({ appId: a.id, status: 'shortlisted' })}
@@ -328,7 +328,7 @@ export default function CompanyDashboard() {
         </div>
 
         {/* Right sidebar */}
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           <div className="card p-5">
             <div className="flex items-center gap-3 mb-4">
               <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-brand text-base font-bold text-white">

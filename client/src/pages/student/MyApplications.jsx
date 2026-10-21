@@ -44,7 +44,7 @@ export default function MyApplications() {
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl">
+    <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 max-w-4xl">
       <div className="mb-7 animate-fade-up">
         <h1 className="text-2xl font-extrabold text-ink">My Applications</h1>
         <p className="text-ink-3 text-sm mt-1">
@@ -134,8 +134,8 @@ export default function MyApplications() {
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-brand-soft bg-brand-soft text-brand"><Icon name={TYPE_ICON[type] || 'briefcase'} size={20} /></div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h3 className="text-sm font-bold text-ink">{title}</h3>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-bold text-ink break-words">{title}</h3>
                         <p className="text-xs text-ink-4 mt-0.5">
                           {company}{location ? ` · ${location}` : ''}{type ? ` · ${type}` : ''}
                         </p>
@@ -154,7 +154,7 @@ export default function MyApplications() {
                       {cfg.desc}
                     </div>
 
-                    <div className="flex gap-4 mt-3 text-xs text-ink-4">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-ink-4">
                       {date    && <span>Applied {date}</span>}
                       {updated && <span>Updated {updated}</span>}
                     </div>

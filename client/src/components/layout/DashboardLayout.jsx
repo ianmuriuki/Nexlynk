@@ -387,7 +387,7 @@ export default function DashboardLayout({ role }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto pb-[110px] md:pb-0">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-[110px] md:pb-0">
           <Outlet />
         </main>
       </div>

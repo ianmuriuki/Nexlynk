@@ -91,7 +91,7 @@ export default function AdminDashboard() {
   const dateStr = now.toLocaleDateString('en-KE', { weekday:'long', day:'numeric', month:'long', year:'numeric' })
 
   return (
-    <div className="p-6 lg:p-8 max-w-screen-xl">
+    <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8 max-w-screen-xl">
       <ConfirmModal
         open={Boolean(confirmation)}
         title={confirmation?.action === 'approve' ? 'Approve company?' : 'Reject company?'}
@@ -111,7 +111,7 @@ export default function AdminDashboard() {
 
       <div className="mb-7 animate-fade-up">
         <h1 className="text-2xl font-extrabold text-ink">Platform Dashboard</h1>
-        <p className="text-slate-500 text-sm mt-1 flex items-center gap-1.5">
+        <p className="text-slate-500 text-sm mt-1 flex flex-wrap items-center gap-x-3 gap-y-1.5">
           {dateStr}
           <span className="inline-flex items-center gap-1 text-success">
             <Icon name="check-circle" size={14} /> All systems operational
@@ -131,8 +131,8 @@ export default function AdminDashboard() {
 
       <ApplicationsChart />
 
-      <div className="grid xl:grid-cols-[1fr_320px] gap-6">
-        <div className="space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-6">
+        <div className="min-w-0 space-y-6">
 
           {/* Pending companies */}
           <div className="card overflow-hidden">
@@ -284,7 +284,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Right column */}
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
 
           {/* Breakdown */}
           <div className="card p-5">
