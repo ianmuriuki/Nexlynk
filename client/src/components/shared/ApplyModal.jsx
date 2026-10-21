@@ -103,7 +103,7 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(20,21,40,0.42)] p-0 backdrop-blur-[3px] min-[768px]:p-6"
+        className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(20,21,40,0.42)] p-0 backdrop-blur-[3px] min-[768px]:p-6"
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -253,7 +253,7 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 bg-white border-t border-line px-6 py-4 flex gap-3">
+          <div className="sticky bottom-0 bg-white border-t border-line px-6 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] flex gap-3">
             <button onClick={onClose} className="btn btn-secondary flex-1">Cancel</button>
             <button
               onClick={() => applyMutation.mutate()}

@@ -53,6 +53,7 @@ export default function OpportunityCard({
   action = null,
   companyLogoUrl = null,
   className = '',
+  variant = 'default',
 }) {
   const companyName = opportunity.company_name || 'Verified company'
   const deadline = formatDeadline(opportunity.application_deadline)
@@ -61,10 +62,12 @@ export default function OpportunityCard({
     ? opportunity.skills_required.filter((skill) => typeof skill === 'string').slice(0, 3)
     : []
   const type = opportunity.type || 'Opportunity'
+  const compact = variant === 'compact'
 
   return (
-    <article className={`card flex min-w-0 flex-col rounded-2xl p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover ${className}`}>
-      <div className="flex min-w-0 items-start gap-3">
+    <article data-variant={variant} className={`card flex min-w-0 ${compact ? 'flex-col items-stretch gap-3 rounded-xl p-4 shadow-none sm:flex-row sm:items-center sm:gap-5' : 'flex-col rounded-2xl p-5'} transition-all duration-200 ${compact ? 'hover:shadow-soft' : 'hover:-translate-y-0.5 hover:shadow-card-hover'} ${className}`}>
+      <div className={compact ? 'min-w-0 flex-1' : 'contents'}>
+      <div className={compact ? 'flex min-w-0 items-center gap-3' : 'flex min-w-0 items-start gap-3'}>
         <div className="grid h-10 w-10 flex-shrink-0 place-items-center overflow-hidden rounded-full bg-brand-soft text-xs font-extrabold text-brand-ink">
           {companyLogoUrl ? (
             <img
@@ -88,7 +91,7 @@ export default function OpportunityCard({
           {type}
         </span>
       </div>
-      <div className="mt-4 grid gap-2 text-xs font-medium text-ink-3">
+      <div className={compact ? 'mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-medium text-ink-3' : 'mt-4 grid gap-2 text-xs font-medium text-ink-3'}>
         <span className="flex min-w-0 items-center gap-2">
           <Icon name="map-pin" size={14} className="flex-shrink-0 text-brand" />
           <span className="truncate">{opportunity.location || 'Location not specified'}</span>
@@ -98,15 +101,16 @@ export default function OpportunityCard({
           <span className="truncate">{opportunity.duration || 'Duration not specified'}</span>
         </span>
       </div>
-      <p className="mt-3 min-h-5 truncate text-sm font-extrabold tabular-nums text-ink">{opportunity.stipend || "Stipend not specified"}</p>
-      {opportunity.description && <p className="mt-3 line-clamp-3 min-h-[3.75rem] break-words text-xs leading-5 text-ink-3">{opportunity.description}</p>}
+      <p className={compact ? 'mt-1 min-h-5 truncate text-sm font-extrabold tabular-nums text-ink' : 'mt-3 min-h-5 truncate text-sm font-extrabold tabular-nums text-ink'}>{opportunity.stipend || "Stipend not specified"}</p>
+      {opportunity.description && <p className={compact ? 'mt-1 line-clamp-1 min-h-0 break-words text-xs leading-5 text-ink-3' : 'mt-3 line-clamp-3 min-h-[3.75rem] break-words text-xs leading-5 text-ink-3'}>{opportunity.description}</p>}
       {skills.length > 0 && (
-        <div className="mt-3 flex min-h-6 flex-wrap gap-1.5">
+        <div className={compact ? 'mt-2 flex min-h-0 flex-wrap gap-1.5' : 'mt-3 flex min-h-6 flex-wrap gap-1.5'}>
           {skills.map((skill, index) => <span key={skill + index} className="max-w-full truncate rounded-full bg-brand-soft px-2.5 py-1 text-[10px] font-bold text-brand-ink">{skill}</span>)}
         </div>
       )}
-      <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
-        <div className="flex min-w-0 flex-col gap-1">
+      </div>
+      <div className={compact ? 'mt-0 flex w-full flex-row items-center justify-between gap-3 border-t border-line pt-3 sm:w-auto sm:flex-col sm:items-end sm:justify-center sm:border-0 sm:pt-0' : 'mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4'}>
+        <div className={compact ? 'flex min-w-0 flex-col gap-1 text-left sm:text-right' : 'flex min-w-0 flex-col gap-1'}>
           <span className={daysLeft !== null && daysLeft <= 3 ? 'flex items-center gap-1.5 text-[11px] font-semibold text-warning-dark' : 'flex items-center gap-1.5 text-[11px] font-semibold text-ink-4'}>
             <Icon name="clock" size={13} />
             {deadline ? 'Apply by ' + deadline : 'No application deadline'}

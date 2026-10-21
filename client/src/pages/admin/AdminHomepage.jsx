@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -157,7 +158,17 @@ export default function AdminHomepage() {
             ) : previewQuery.isError ? (
               <p className="text-sm text-danger-dark">Could not load the homepage preview.</p>
             ) : previewQuery.data?.length ? (
-              <div className="grid gap-3">{previewQuery.data.map((job) => <OpportunityCard key={job.id} opportunity={job} companyLogoUrl={homepageLogoUrl(job.company_logo)} />)}</div>
+              <div className="grid gap-3">
+                {previewQuery.data.map((job) => (
+                  <OpportunityCard
+                    key={job.id}
+                    opportunity={job}
+                    companyLogoUrl={homepageLogoUrl(job.company_logo)}
+                    variant="compact"
+                    action={<Link to="/register" className="btn btn-primary btn-sm">Apply</Link>}
+                  />
+                ))}
+              </div>
             ) : <p className="text-sm text-ink-3">No eligible opportunities are showing right now.</p>}
           </div>
         </section>

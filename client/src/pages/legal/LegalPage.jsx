@@ -584,4 +584,4 @@ export default function LegalPage({ kind = 'terms' }) {
       </main>
     </div>
   )
-}
+}clea
