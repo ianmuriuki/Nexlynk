@@ -210,6 +210,27 @@ export default function DashboardLayout({ role }) {
   })
 
   const { items: notifItems, badges } = useRoleData(role, user?.id)
+
+  const seenKey = `nx:seen:${role}:${user?.id ?? 'anon'}`
+  const itemKey = (n) => `${n.id}:${n.tone}`
+  const readSeen = (key) => {
+    try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')) } catch { return new Set() }
+  }
+  const [seen, setSeen] = useState(() => readSeen(seenKey))
+  const [fresh, setFresh] = useState(0)
+
+  useEffect(() => { setSeen(readSeen(seenKey)) }, [seenKey])
+
+  const unseen = notifItems.filter((n) => !seen.has(itemKey(n)))
+
+  useEffect(() => {
+    if (!notifDD.open) { setFresh(0); return }
+    if (unseen.length === 0) return
+    setFresh((f) => f + unseen.length)
+    const next = new Set([...seen, ...notifItems.map(itemKey)])
+    setSeen(next)
+    try { localStorage.setItem(seenKey, JSON.stringify([...next].slice(-200))) } catch { /* storage unavailable */ }
+  }, [notifDD.open, notifItems])
   const profile = useProfile(role, user?.id)
   const [logoFailed, setLogoFailed] = useState(false)
   const { data: companyLogoUrl } = useQuery({
@@ -312,9 +333,9 @@ export default function DashboardLayout({ role }) {
               className={clsx('btn-icon relative', notifDD.open && '!border-brand !text-brand')}
             >
               <Icon name="bell" size={19} />
-              {notifItems.length > 0 && (
+              {unseen.length > 0 && (
                 <span className="absolute -right-1 -top-1 h-[18px] min-w-[18px] rounded-full bg-danger px-[5px] text-center text-[10px] font-bold leading-[18px] tabular-nums text-white">
-                  {notifItems.length > 9 ? '9+' : notifItems.length}
+                  {unseen.length > 9 ? '9+' : unseen.length}
                 </span>
               )}
             </button>
@@ -323,8 +344,8 @@ export default function DashboardLayout({ role }) {
               <div className="animate-pop fixed inset-x-2.5 top-[62px] z-50 origin-top-right overflow-hidden rounded-2xl border border-line bg-white shadow-pop md:absolute md:inset-x-auto md:right-0 md:top-full md:mt-2 md:w-[380px]">
                 <div className="flex items-center justify-between border-b border-line px-4 py-[13px]">
                   <span className="text-sm font-extrabold tracking-tight">Notifications</span>
-                  {notifItems.length > 0 && (
-                    <span className="badge bg-brand-soft text-brand-ink">{notifItems.length} new</span>
+                  {fresh > 0 && (
+                    <span className="badge bg-brand-soft text-brand-ink">{fresh} new</span>
                   )}
                 </div>
                 <div className="max-h-[420px] overflow-y-auto p-1.5">
