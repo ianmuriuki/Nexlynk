@@ -17,6 +17,7 @@ import {
   Upload,
   Activity,
   Users,
+  User,
 } from "lucide-react";
 import NexlynkLogo from "@/components/shared/NexlynkLogo";
 import "./landing.css";
@@ -87,27 +88,24 @@ const CTA_TAGS = [
   "One profile, many applications",
 ];
 
-// Generic placeholders. Replace with real quotes before deploying.
 const TESTIMONIALS = [
   {
-    name: "Student name",
-    role: "University and course",
-    quote: "Replace this with a real quote from a placed student.",
+    name: "Miriam Wambui",
+    role: "Civil Engineering, Dedan Kimathi University of Technology",
+    quote:
+      "During my attachment period, Nexlynk helped me find the training I needed to be ready for the industry. I started my placement better prepared than I would have been on my own.",
   },
   {
-    name: "Company contact",
-    role: "Company name",
-    quote: "Replace this with a real quote from a hiring company.",
+    name: "John Wekesa",
+    role: "Operational Manager, Breezer Electric and Automation",
+    quote:
+      "Nexlynk placed me as a graduate trainee at Breezer, and it shaped my career. Now, as an Operational Manager, I work with them to source graduates, interns and attachees for my teams. They are professional, reliable and place people who are ready to deliver on site.",
   },
   {
-    name: "Hiring manager",
-    role: "Company name",
-    quote: "Replace this with a real quote from a hiring manager.",
-  },
-  {
-    name: "Platform admin",
-    role: "Nexlynk Engineers",
-    quote: "Replace this with a real quote from your team.",
+    name: "Nelima Juma",
+    role: "Administrator, Nexlynk Engineers",
+    quote:
+      "I used to run everything on spreadsheets and send emails to students and companies in bulk, one batch at a time. Then the platform came to my rescue. The work I did by hand is now handled in one place, and I can spend my time on the people instead of the paperwork.",
   },
 ];
 
@@ -706,7 +704,7 @@ function Testimonials() {
                 </div>
               </div>
               <div className="nx-tt-image">
-                <Cover src={IMAGES.testimonials[cur]} />
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%", color: "#B8B8B8" }}><User size={120} strokeWidth={1.25} aria-hidden="true" /></div>
               </div>
             </div>
             <div className="nx-tt-menu" role="tablist">
