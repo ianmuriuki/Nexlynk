@@ -35,6 +35,22 @@ export const companyAPI = {
     return { data: { data } }
   },
 
+  async getOpportunity(companyId, oppId) {
+    const { data, error } = await supabase.from('opportunities')
+      .select('*').eq('id', oppId).eq('company_id', companyId).maybeSingle()
+    if (error) fail(error)
+    if (!data) throw { status: 404, message: 'Opportunity not found.' }
+    return { data: { data } }
+  },
+
+  async updateOpportunity(companyId, oppId, body) {
+    const { data, error } = await supabase.from('opportunities')
+      .update(body).eq('id', oppId).eq('company_id', companyId).select().maybeSingle()
+    if (error) fail(error)
+    if (!data) throw { status: 403, message: 'You cannot edit this opportunity.' }
+    return { data: { data } }
+  },
+
   async getApplicants(id, { page = 1, limit = 20, status, opportunity_id } = {}) {
     let q = supabase.from('applications')
       .select('*, student:student_profiles(name, phone, university, course, year_of_study, discipline, skills, about, cv_path, profile_completion, users(email)), opportunity:opportunities!inner(id, title, type, company_id)', { count: 'exact' })

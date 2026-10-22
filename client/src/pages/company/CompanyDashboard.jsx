@@ -241,9 +241,9 @@ export default function CompanyDashboard() {
                           <td className="px-5 py-4 text-sm font-semibold text-ink">{Number(opp.application_count) || 0}</td>
                           <td className="px-5 py-4 text-sm text-ink-4 whitespace-nowrap">{deadline}</td>
                           <td className="px-5 py-4">
-                            <button className="btn btn-sm bg-canvas-2 text-ink-2 hover:bg-canvas-2 flex items-center gap-1">
-                              <Icon name="eye" size={14} /> View
-                            </button>
+                            <Link to={`/company/edit/${opp.id}`} className="btn btn-sm bg-canvas-2 text-ink-2 hover:bg-canvas-2 flex items-center gap-1">
+                              <Icon name="edit" size={14} /> Edit
+                            </Link>
                           </td>
                         </tr>
                       )

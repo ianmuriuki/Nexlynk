@@ -18,9 +18,11 @@ const CompanyDashboard    = lazy(() => import('@/pages/company/CompanyDashboard'
 const PostOpportunity     = lazy(() => import('@/pages/company/PostOpportunity'))
 const CompanyApplicants   = lazy(() => import('@/pages/company/CompanyApplicants'))
 const CompanySettings     = lazy(() => import('@/pages/company/CompanySettings'))
+const EditOpportunity     = lazy(() => import('@/pages/company/EditOpportunity'))
 
 const AdminDashboard      = lazy(() => import('@/pages/admin/AdminDashboard'))
 const AdminCompanies      = lazy(() => import('@/pages/admin/AdminCompanies'))
+const AdminUsers          = lazy(() => import('@/pages/admin/AdminUsers'))
 const AdminApplications   = lazy(() => import('@/pages/admin/AdminApplications'))
 const AdminHomepage       = lazy(() => import('@/pages/admin/AdminHomepage'))
 
@@ -72,6 +74,7 @@ const router = createBrowserRouter([
         { path: '/company/post',       element: <SW><PostOpportunity /></SW>   },
         { path: '/company/applicants', element: <SW><CompanyApplicants /></SW> },
         { path: '/company/settings',   element: <SW><CompanySettings /></SW>   },
+        { path: '/company/edit/:id',   element: <SW><EditOpportunity /></SW>   },
       ],
     }],
   },
@@ -83,6 +86,7 @@ const router = createBrowserRouter([
       children: [
         { path: '/admin',              element: <SW><AdminDashboard /></SW>    },
         { path: '/admin/companies',    element: <SW><AdminCompanies /></SW>    },
+        { path: '/admin/users',        element: <SW><AdminUsers /></SW>        },
         { path: '/admin/applications', element: <SW><AdminApplications /></SW> },
         { path: '/admin/homepage', element: <SW><AdminHomepage /></SW> },
       ],

@@ -6,7 +6,7 @@ import Icon from '@/components/Icon'
 import StatusPill from '@/components/ui/StatusPill'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import OpportunityCard from '@/components/shared/OpportunityCard'
-import { adminGetHomepage, adminHomepageCandidates, adminSetHomepage, getHomepageJobs, homepageLogoUrl } from '@/api/homepage'
+import { adminGetHomepage, adminHomepageCandidates, adminSetHomepage, getHomepageJobs, homepageLogoUrl, adminGetHidden, adminSetHidden } from '@/api/homepage'
 
 const rows = (response) => response.data?.data ?? []
 const dateLabel = (value) => {
@@ -37,7 +37,7 @@ function CompanyMark({ name, path }) {
   )
 }
 
-function Candidate({ job, selected, full, onAdd }) {
+function Candidate({ job, selected, full, hidden, live, busy, onAdd, onHide, onUnhide }) {
   const reason = hiddenReason(job)
   return (
     <div className="flex min-w-0 items-center gap-3 px-3 py-3">
@@ -47,10 +47,24 @@ function Candidate({ job, selected, full, onAdd }) {
         <p className="truncate text-xs text-ink-3">{job.company_name || 'Company not set'}</p>
         <p className="mt-1 text-[11px] text-ink-4">Posted {dateLabel(job.created_at)} · Deadline {dateLabel(job.application_deadline)}</p>
         {reason && <p className="mt-1 text-[11px] font-semibold text-warning-dark">{reason}</p>}
+        {hidden
+          ? <p className="mt-1 text-[11px] font-semibold text-ink-3">Hidden from the homepage</p>
+          : live && !selected && <p className="mt-1 text-[11px] font-semibold text-success-dark">Showing automatically</p>}
       </div>
-      <button type="button" onClick={() => onAdd(job.id)} disabled={selected || full || Boolean(reason)} className={selected ? 'btn-soft btn-sm' : 'btn-secondary btn-sm'}>
-        {selected ? 'Selected' : 'Add'}
-      </button>
+      <div className="flex flex-shrink-0 flex-col items-stretch gap-1.5 sm:flex-row sm:items-center">
+        {hidden ? (
+          <button type="button" onClick={() => onUnhide(job.id)} disabled={busy} className="btn-secondary btn-sm">Show again</button>
+        ) : (
+          <>
+            <button type="button" onClick={() => onAdd(job.id)} disabled={selected || full || Boolean(reason)} className={selected ? 'btn-soft btn-sm' : 'btn-secondary btn-sm'}>
+              {selected ? 'Selected' : 'Add'}
+            </button>
+            {!selected && (
+              <button type="button" title="Remove from the homepage" onClick={() => onHide(job.id)} disabled={busy} className="btn-secondary btn-sm text-danger">Hide</button>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -67,6 +81,24 @@ export default function AdminHomepage() {
     queryFn: () => getHomepageJobs().then(rows),
     staleTime: 5 * 60 * 1000,
   })
+
+  const hiddenQuery = useQuery({ queryKey: ['admin-homepage-hidden'], queryFn: () => adminGetHidden().then(rows) })
+  const hiddenIds = new Set(hiddenQuery.data ?? [])
+  const liveIds = new Set((previewQuery.data ?? []).map((job) => job.id))
+  const hideMutation = useMutation({
+    mutationFn: (next) => adminSetHidden(next),
+    onSuccess: async () => {
+      toast.success('Homepage updated')
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['admin-homepage-hidden'] }),
+        qc.invalidateQueries({ queryKey: ['admin-homepage'] }),
+        qc.invalidateQueries({ queryKey: ['homepage-jobs'] }),
+      ])
+    },
+    onError: (error) => toast.error(error?.message || 'Could not update the homepage'),
+  })
+  const hideJob = (id) => hideMutation.mutate([...hiddenIds, id])
+  const showJob = (id) => hideMutation.mutate([...hiddenIds].filter((x) => x !== id))
 
   const saved = selectionQuery.data ?? []
   const savedIds = saved.slice().sort((a, b) => a.position - b.position).map((job) => job.id)
@@ -185,7 +217,7 @@ export default function AdminHomepage() {
             <div className="rounded-xl border border-danger-light bg-danger-light p-5 text-sm text-danger-dark">Could not load opportunities.</div>
           ) : candidates.length ? (
             <div className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-white">
-              {candidates.map((job) => <Candidate key={job.id} job={job} selected={chosen.has(job.id)} full={ids.length >= 3 && !chosen.has(job.id)} onAdd={(id) => change((current) => current.includes(id) || current.length >= 3 ? current : [...current, id])} />)}
+              {candidates.map((job) => <Candidate key={job.id} job={job} hidden={hiddenIds.has(job.id)} live={liveIds.has(job.id)} busy={hideMutation.isPending || !hiddenQuery.isSuccess} onHide={hideJob} onUnhide={showJob} selected={chosen.has(job.id)} full={ids.length >= 3 && !chosen.has(job.id)} onAdd={(id) => change((current) => current.includes(id) || current.length >= 3 ? current : [...current, id])} />)}
             </div>
           ) : <div className="rounded-xl border border-line bg-white p-8 text-center text-sm text-ink-3">{search ? 'No matching opportunities.' : 'No published opportunities exist.'}</div>}
           {ids.length >= 3 && <p className="mt-2 text-xs text-ink-4">Remove a selected opportunity to add another.</p>}

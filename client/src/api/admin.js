@@ -39,6 +39,28 @@ export const adminAPI = {
     return page(rows, count, p, limit)
   },
 
+  async students({ page: p = 1, limit = 20, search, cv } = {}) {
+    let q = supabase.from('student_profiles')
+      .select('*, users(email, created_at), applications(count)', { count: 'exact' })
+      .order('name', { ascending: true })
+      .range((p - 1) * limit, p * limit - 1)
+    const term = (search || '').replace(/[,()%*\\]/g, ' ').trim()
+    if (term) {
+      q = q.or(`name.ilike.%${term}%,university.ilike.%${term}%,course.ilike.%${term}%,discipline.ilike.%${term}%`)
+    }
+    if (cv === 'with_cv') q = q.not('cv_path', 'is', null)
+    if (cv === 'no_cv') q = q.is('cv_path', null)
+    const { data, count, error } = await q
+    if (error) fail(error)
+    const rows = data.map(({ users, applications, ...s }) => ({
+      ...s,
+      email: users?.email ?? '',
+      joined_at: users?.created_at,
+      application_count: applications?.[0]?.count ?? 0,
+    }))
+    return page(rows, count, p, limit)
+  },
+
   async approveCompany(id) {
     const { data, error } = await supabase.rpc('approve_company', { p_id: id })
     if (error) fail(error)

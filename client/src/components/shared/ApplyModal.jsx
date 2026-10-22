@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import Icon from '@/components/Icon'
@@ -96,7 +97,7 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
   const skills      = opportunity.skills_required ?? []
   const disciplines = opportunity.disciplines ?? []
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
@@ -271,6 +272,7 @@ export default function ApplyModal({ opportunity, onClose, onSuccess }) {
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }

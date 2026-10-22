@@ -45,3 +45,15 @@ export async function adminHomepageCandidates() {
   }))
   return { data: { data: rows } }
 }
+
+export async function adminGetHidden() {
+  const { data, error } = await supabase.rpc('admin_get_homepage_hidden')
+  if (error) fail(error)
+  return { data: { data: data ?? [] } }
+}
+
+export async function adminSetHidden(ids) {
+  const { data, error } = await supabase.rpc('admin_set_homepage_hidden', { ids })
+  if (error) fail(error)
+  return { data: { data } }
+}
