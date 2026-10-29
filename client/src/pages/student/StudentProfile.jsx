@@ -20,6 +20,8 @@ const schema = z.object({
   year_of_study:       z.coerce.number().int().min(1).max(10).optional().or(z.literal('')),
   expected_graduation: z.string().optional().or(z.literal('')),
   discipline:          z.string().max(100).optional().or(z.literal('')),
+  education_level:     z.enum(['diploma', 'degree']).optional().or(z.literal('')),
+  attachment_window:   z.string().max(100).optional().or(z.literal('')),
   availability:        z.string().max(200).optional().or(z.literal('')),
   about:               z.string().max(2000).optional().or(z.literal('')),
 })
@@ -27,6 +29,7 @@ const schema = z.object({
 const DISCIPLINES = [
   'Computer Science', 'Information Technology', 'Software Engineering',
   'Data Science', 'Electrical Engineering', 'Mechanical Engineering',
+  'Mechatronic Engineering',
   'Civil Engineering', 'Business Administration', 'Finance & Accounting',
   'Marketing', 'Human Resources', 'Design & UX', 'Law',
   'Medicine & Health', 'Agriculture', 'Education', 'Media & Communications', 'Other',
@@ -88,6 +91,7 @@ export default function StudentProfile() {
       name: user?.name || '', phone: '', city: '',
       university: '', course: '', year_of_study: '',
       expected_graduation: '', discipline: '', availability: '', about: '',
+      education_level: '', attachment_window: '',
     },
   })
 
@@ -102,6 +106,8 @@ export default function StudentProfile() {
       year_of_study:       profile.year_of_study || '',
       expected_graduation: profile.expected_graduation || '',
       discipline:          profile.discipline || '',
+      education_level:     profile.education_level || '',
+      attachment_window:   profile.attachment_window || '',
       availability:        profile.availability || '',
       about:               profile.about || '',
     })
@@ -260,6 +266,25 @@ export default function StudentProfile() {
             </Field>
             <Field label="Expected graduation" error={errors.expected_graduation}>
               <input {...register('expected_graduation')} type="date" className="input" />
+            </Field>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Level of study" error={errors.education_level}>
+              <select {...register('education_level')} className="input">
+                <option value="">Select level</option>
+                <option value="diploma">Diploma</option>
+                <option value="degree">Degree</option>
+              </select>
+            </Field>
+            <Field label="When is your attachment expected?" error={errors.attachment_window}>
+              <select {...register('attachment_window')} className="input">
+                <option value="">Select a period</option>
+                <option value="Q4 2026 (Oct to Dec)">Q4 2026 (Oct to Dec)</option>
+                <option value="Q1 2027 (Jan to Mar)">Q1 2027 (Jan to Mar)</option>
+                <option value="Q2 2027 (Apr to Jun)">Q2 2027 (Apr to Jun)</option>
+                <option value="Later than Q2 2027">Later than Q2 2027</option>
+              </select>
             </Field>
           </div>
         </div>
