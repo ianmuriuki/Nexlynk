@@ -29,6 +29,7 @@ const NAV = {
     { label: 'Dashboard',    short: 'Home',         to: '/admin',              icon: 'bar-chart' },
     { label: 'Companies',    short: 'Companies',    to: '/admin/companies',    icon: 'building' },
     { label: 'Users',        short: 'Users',        to: '/admin/users',        icon: 'users' },
+    { label: 'Updates',      short: 'Updates',      to: '/admin/updates',      icon: 'zap' },
     { label: 'Applications', short: 'Applications', to: '/admin/applications', icon: 'file' },
     { label: 'Homepage jobs', short: 'Homepage', to: '/admin/homepage', icon: 'star' },
   ],

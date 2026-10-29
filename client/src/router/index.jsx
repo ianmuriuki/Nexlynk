@@ -23,6 +23,7 @@ const EditOpportunity     = lazy(() => import('@/pages/company/EditOpportunity')
 const AdminDashboard      = lazy(() => import('@/pages/admin/AdminDashboard'))
 const AdminCompanies      = lazy(() => import('@/pages/admin/AdminCompanies'))
 const AdminUsers          = lazy(() => import('@/pages/admin/AdminUsers'))
+const AdminUpdates        = lazy(() => import('@/pages/admin/AdminUpdates'))
 const AdminApplications   = lazy(() => import('@/pages/admin/AdminApplications'))
 const AdminHomepage       = lazy(() => import('@/pages/admin/AdminHomepage'))
 
@@ -87,6 +88,7 @@ const router = createBrowserRouter([
         { path: '/admin',              element: <SW><AdminDashboard /></SW>    },
         { path: '/admin/companies',    element: <SW><AdminCompanies /></SW>    },
         { path: '/admin/users',        element: <SW><AdminUsers /></SW>        },
+        { path: '/admin/updates',      element: <SW><AdminUpdates /></SW>      },
         { path: '/admin/applications', element: <SW><AdminApplications /></SW> },
         { path: '/admin/homepage', element: <SW><AdminHomepage /></SW> },
       ],

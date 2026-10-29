@@ -8,6 +8,7 @@ import { studentAPI, opportunityAPI } from '@/api/opportunities'
 import ApplyModal from '@/components/shared/ApplyModal'
 import clsx from 'clsx'
 import StatusPill from '@/components/ui/StatusPill'
+import UpdatesCard from '@/components/shared/UpdatesCard'
 
 const TYPE_ICON = {
   internship:  'briefcase',
@@ -282,6 +283,8 @@ export default function StudentDashboard() {
               </Link>
             </div>
           </div>
+
+          <UpdatesCard />
 
           <div className="card p-5">
             <h3 className="font-semibold text-ink text-sm mb-3 flex items-center gap-2">

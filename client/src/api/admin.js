@@ -93,6 +93,48 @@ export const adminAPI = {
     return page(rows, count, p, limit)
   },
 
+  async applicationsFull({ page: p = 1, limit = 25, status, opportunity_id } = {}) {
+    let q = supabase.from('applications')
+      .select('*, student:student_profiles(name, phone, city, university, course, year_of_study, discipline, education_level, attachment_window, skills, about, cv_path, availability, users(email)), opportunity:opportunities!inner(id, title, company_id, company_profiles(name))', { count: 'exact' })
+      .order('applied_at', { ascending: false })
+      .range((p - 1) * limit, p * limit - 1)
+    if (status) q = q.eq('status', status)
+    if (opportunity_id) q = q.eq('opportunity_id', opportunity_id)
+    const { data, count, error } = await q
+    if (error) fail(error)
+    const rows = data.map(({ student, opportunity, ...a }) => {
+      const { users, ...s } = student || {}
+      return {
+        ...a,
+        student: { ...s, email: users?.email ?? '' },
+        opportunity_title: opportunity?.title ?? '',
+        company_name: opportunity?.company_profiles?.name ?? '',
+      }
+    })
+    return page(rows, count, p, limit)
+  },
+
+  async statusCounts({ opportunity_id } = {}) {
+    const keys = ['pending', 'shortlisted', 'placed', 'rejected']
+    const results = await Promise.all(keys.map((s) => {
+      let q = supabase.from('applications').select('id', { count: 'exact', head: true }).eq('status', s)
+      if (opportunity_id) q = q.eq('opportunity_id', opportunity_id)
+      return q
+    }))
+    const out = {}
+    results.forEach((r, i) => { if (r.error) fail(r.error); out[keys[i]] = r.count ?? 0 })
+    return { data: { data: out } }
+  },
+
+  async opportunityOptions() {
+    const { data, error } = await supabase.from('opportunities')
+      .select('id, title, company_profiles(name)')
+      .order('created_at', { ascending: false })
+      .limit(200)
+    if (error) fail(error)
+    return { data: { data: (data ?? []).map((o) => ({ id: o.id, title: o.title, company_name: o.company_profiles?.name ?? '' })) } }
+  },
+
   async updateAppStatus(id, { status, note }) {
     const { data, error } = await supabase.rpc('update_application_status', { p_id: id, p_status: status, p_note: note ?? null })
     if (error) fail(error)
