@@ -24,6 +24,7 @@ import "./landing.css";
 import IMAGES from "./images";
 import OpportunityCard from '@/components/shared/OpportunityCard';
 import { getHomepageJobs, homepageLogoUrl } from '@/api/homepage';
+import { getPublishedAnnouncements } from '@/api/announcements';
 
 const NAV = [
   { label: "About", href: "#about" },
@@ -515,6 +516,87 @@ function Work() {
   )
 }
 
+// ─── Updates ───
+const UPDATE_KIND = { update: "Update", event: "Event", training: "Training" };
+const safeUrl = (u) => (/^https?:\/\//i.test(u || "") ? u : null);
+const updateDate = (d) =>
+  d
+    ? new Date(d + "T00:00:00+03:00").toLocaleDateString("en-KE", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
+
+function Updates() {
+  const { data: items = [] } = useQuery({
+    queryKey: ["announcements-public", 6],
+    queryFn: () => getPublishedAnnouncements({ limit: 6 }).then((r) => r.data.data ?? []),
+    staleTime: 60 * 1000,
+  });
+  const [open, setOpen] = useState(null);
+  if (!items.length) return null;
+
+  return (
+    <section id="updates" className="nx-section">
+      <div className="nx-container">
+        <div className="nx-wrap">
+          <Reveal>
+            <Heading label="Updates">What is happening at Nexlynk</Heading>
+          </Reveal>
+          <div className="nx-job-list">
+            {items.map((u) => {
+              const isOpen = open === u.id;
+              const when = updateDate(u.event_date);
+              const url = safeUrl(u.link_url);
+              return (
+                <article key={u.id} className="nx-job-row">
+                  <div className="nx-job-main">
+                    <div className="nx-job-copy">
+                      <p className="nx-job-company">{UPDATE_KIND[u.kind] || "Update"}</p>
+                      <h4 className="nx-job-title">{u.title}</h4>
+                      {u.summary && <p className="nx-job-description">{u.summary}</p>}
+                      {(when || u.location) && (
+                        <div className="nx-job-details">
+                          {when && <span>{when}</span>}
+                          {u.location && <span>{u.location}</span>}
+                        </div>
+                      )}
+                      {isOpen && u.body && (
+                        <p className="nx-body" style={{ whiteSpace: "pre-line", marginTop: 12 }}>
+                          {u.body}
+                        </p>
+                      )}
+                      {u.body && (
+                        <button
+                          type="button"
+                          className="nx-featured-jobs-link"
+                          style={{ background: "none", border: 0, padding: 0, marginTop: 10, cursor: "pointer" }}
+                          aria-expanded={isOpen}
+                          onClick={() => setOpen(isOpen ? null : u.id)}
+                        >
+                          {isOpen ? "Show less" : "Read more"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {url && (
+                    <div className="nx-job-action">
+                      <a href={url} target="_blank" rel="noreferrer" className="nx-job-apply">
+                        {u.link_label || "Learn more"}
+                      </a>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Services ───
 function Services() {
   return (
@@ -904,6 +986,7 @@ export default function LandingPage() {
       <Hero />
       <About />
       <Work />
+      <Updates />
       <Services />
       <HowItWorks />
       <Why />

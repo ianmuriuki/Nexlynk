@@ -27,6 +27,7 @@ const schema = z.object({
 const DISCIPLINE_OPTIONS = [
   'Computer Science', 'Information Technology', 'Software Engineering',
   'Data Science', 'Electrical Engineering', 'Mechanical Engineering',
+  'Mechatronic Engineering',
   'Civil Engineering', 'Business Administration', 'Finance & Accounting',
   'Marketing', 'Human Resources', 'Design & UX', 'Law',
   'Medicine & Health', 'Agriculture', 'Education', 'Media & Communications', 'Other',

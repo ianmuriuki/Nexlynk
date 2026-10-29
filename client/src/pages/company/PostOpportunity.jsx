@@ -31,6 +31,7 @@ const DISCIPLINE_OPTIONS = [
   'Data Science',
   'Electrical Engineering',
   'Mechanical Engineering',
+  'Mechatronic Engineering',
   'Civil Engineering',
   'Business Administration',
   'Finance & Accounting',
